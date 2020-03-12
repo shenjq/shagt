@@ -151,7 +151,7 @@ func (this *handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	urlStr := r.URL.String()
 	glog.V(0).Infof("Url :%s", urlStr)
 
-	if urlStr == "/op" && r.Method == "POST" {
+	if urlStr == "/op" || urlStr == "/monitor" {
 		remote, err := url.Parse("http://" + this.host + ":" + this.port)
 		if err != nil {
 			glog.V(0).Infof("url.Parse err,%v", err)
@@ -162,6 +162,7 @@ func (this *handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//内部定义'/op2'用于操作cli1
 	err := r.ParseForm()
 	if err != nil {
 		result.Code = "401"
