@@ -1,0 +1,14 @@
+[
+  {
+    "path": "/Users/shenjq/go/src/demo/shagt/log/monlog1.txt",
+    "keyword": "err|fail",
+    "note": "文件1",
+    "system": "CA8888"
+  },
+  {
+    "path": "/Users/shenjq/go/src/demo/shagt/log/monlog2.txt",
+    "keyword": "error",
+    "note": "文件2",
+    "system": "CA6666"
+  }
+]

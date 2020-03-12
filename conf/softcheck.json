@@ -1,0 +1,14 @@
+[
+    {
+        "SoftName": "Goland",
+        "CmdLine": "/Applications/GoLand.app/Contents/MacOS/goland",
+        "Ver": "",
+        "Vershow": ""
+    },
+    {
+        "SoftName": "qq",
+        "CmdLine": "/Applications/QQ.app/Contents/MacOS/QQ",
+        "Ver": "",
+        "Vershow": ""
+    }
+]

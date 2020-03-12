@@ -1,0 +1,114 @@
+{
+    "Host": {
+        "Hostname": "192.168.0.100",
+        "OS": "darwin",
+        "PlatformVersion": "10.15.3",
+        "KernelVersion": "19.3.0"
+    },
+    "Cpu": {
+        "CoreNum": 4
+    },
+    "Mem": {
+        "Total": 8192
+    },
+    "Swap": {
+        "Total": 2048
+    },
+    "Interface": [
+        {
+            "Name": "lo0",
+            "Addrs": "127.0.0.1/8::1/128fe80::1/64",
+            "Mac": ""
+        },
+        {
+            "Name": "gif0",
+            "Addrs": "",
+            "Mac": ""
+        },
+        {
+            "Name": "stf0",
+            "Addrs": "",
+            "Mac": ""
+        },
+        {
+            "Name": "en0",
+            "Addrs": "fe80::1cff:647:cd9b:766d/64192.168.0.100/24",
+            "Mac": "78:4f:43:a0:44:78"
+        },
+        {
+            "Name": "p2p0",
+            "Addrs": "",
+            "Mac": "0a:4f:43:a0:44:78"
+        },
+        {
+            "Name": "awdl0",
+            "Addrs": "fe80::4001:c9ff:feb7:b8c5/64",
+            "Mac": "42:01:c9:b7:b8:c5"
+        },
+        {
+            "Name": "llw0",
+            "Addrs": "fe80::4001:c9ff:feb7:b8c5/64",
+            "Mac": "42:01:c9:b7:b8:c5"
+        },
+        {
+            "Name": "bridge0",
+            "Addrs": "",
+            "Mac": "82:e5:5c:24:b0:05"
+        },
+        {
+            "Name": "en10",
+            "Addrs": "",
+            "Mac": "82:e5:5c:24:b0:01"
+        },
+        {
+            "Name": "en8",
+            "Addrs": "",
+            "Mac": "82:e5:5c:24:b0:00"
+        },
+        {
+            "Name": "en4",
+            "Addrs": "",
+            "Mac": "82:e5:5c:24:b0:05"
+        },
+        {
+            "Name": "en9",
+            "Addrs": "",
+            "Mac": "82:e5:5c:24:b0:04"
+        },
+        {
+            "Name": "utun0",
+            "Addrs": "fe80::c523:fbdd:b5ac:e49d/64",
+            "Mac": ""
+        },
+        {
+            "Name": "utun1",
+            "Addrs": "fe80::e066:3d4f:5ea7:f9a7/64",
+            "Mac": ""
+        },
+        {
+            "Name": "en5",
+            "Addrs": "fe80::aede:48ff:fe00:1122/64",
+            "Mac": "ac:de:48:00:11:22"
+        }
+    ],
+    "Sys": {
+        "Dns": "",
+        "HasNtp": false,
+        "HasIptable": false
+    },
+    "NFS": null,
+    "Soft": [
+        {
+            "SoftName": "Goland",
+            "CmdLine": "/Applications/GoLand.app/Contents/MacOS/goland",
+            "Ver": "",
+            "Vershow": ""
+        },
+        {
+            "SoftName": "qq",
+            "CmdLine": "/Applications/QQ.app/Contents/MacOS/QQ",
+            "Ver": "",
+            "Vershow": ""
+        }
+    ]
+}
