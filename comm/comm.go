@@ -64,23 +64,29 @@ func GetWorkPath() (string, error) {
 func GetHostName() string {
 	h1, err := os.Hostname()
 	if err != nil {
+		glog.V(0).Infof("get hostname err,%v", err)
 		return ""
 	}
-	h1 = strings.ToUpper(h1)
-	if strings.HasPrefix(h1, "C") {
+	if strings.HasPrefix(strings.ToUpper(h1), "C") { //匹配CAxxxx、CBxxxx
 		return h1
 	}
+	var h2 string
+	glog.V(0).Infof("get hostname os:[%s]", runtime.GOOS)
 	if runtime.GOOS == "linux" {
 		b, err := ioutil.ReadFile("/etc/issue")
 		if err != nil {
-			return ""
-		}
-		if strings.HasPrefix(string(b), "C") {
-			return string(b)
+			glog.V(0).Infof("ioutil.ReadFile err,%v", err)
+		} else if strings.HasPrefix(string(b), "C") { //匹配CAxxxx、CBxxxx
+			h2 = string(b)
 		}
 	}
-	return ""
+	if len(h2) > 0 {
+		return h2
+	} else { //这种情况下还是返回h1
+		return h1
+	}
 }
+
 func GetMgrIP(target string) string {
 	conn, err := net.Dial("udp", target)
 	if err != nil {

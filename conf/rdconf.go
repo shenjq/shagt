@@ -5,6 +5,7 @@ import (
 	"gopkg.in/ini.v1"
 	"path/filepath"
 	"shagt/comm"
+	"strings"
 )
 
 type SerConf struct {
@@ -73,10 +74,10 @@ func InitCliConf(cfgfile string) (err error) {
 		glog.V(0).Infof("initconf err,%v", err)
 		return
 	}
-	if gCliConf.LocalHostName == "" { //获取本机hostname
+	if strings.TrimSpace(gCliConf.LocalHostName) == "" { //获取本机hostname
 		gCliConf.LocalHostName = comm.GetHostName()
 	}
-	if gCliConf.LocalHostIp == "" { //获取本机ip
+	if strings.TrimSpace(gCliConf.LocalHostIp) == "" { //获取本机ip
 		gCliConf.LocalHostIp = comm.GetMgrIP(gCliConf.LocalNetTarget)
 	}
 	if !filepath.IsAbs(gCliConf.CliLogMonPath) {
