@@ -193,7 +193,7 @@ func Op(w http.ResponseWriter, r *http.Request) {
 	var act string
 
 	urlStr := r.URL.String()
-	glog.V(0).Infof("Url :%s", urlStr)
+	glog.V(0).Infof("cli1 receive request Url :%s", urlStr)
 
 	err := r.ParseForm()
 	if err != nil {

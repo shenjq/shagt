@@ -35,6 +35,7 @@ type CliConf struct {
 	DrCheckFilePath   string
 	SoftWareCheckPath string
 	CfgManageFilePath string
+	LocalNetTarget    string
 }
 
 var gSerConf = &SerConf{}
@@ -73,10 +74,10 @@ func InitCliConf(cfgfile string) (err error) {
 		return
 	}
 	if gCliConf.LocalHostName == "" { //获取本机hostname
-		gCliConf.LocalHostName = "CA9999"
+		gCliConf.LocalHostName = comm.GetHostName()
 	}
 	if gCliConf.LocalHostIp == "" { //获取本机ip
-		gCliConf.LocalHostIp = "0.0.0.0"
+		gCliConf.LocalHostIp = comm.GetMgrIP(gCliConf.LocalNetTarget)
 	}
 	if !filepath.IsAbs(gCliConf.CliLogMonPath) {
 		gCliConf.CliLogMonPath = comm.G_CliInfo.WorkPath + gCliConf.CliLogMonPath

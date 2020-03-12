@@ -182,17 +182,20 @@ func Svr_handler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		cli := strings.Split(cliList[0], ",") //hostname,ip,pid,ver
 		var url string
-		if action == "start" || action == "stop" || action == "restart"  {
-			url = fmt.Sprintf("http://%s:7789/op2?action=%s", cli[1],action)
+		var data string
+		if action == "start" || action == "stop" || action == "restart" {
+			url = fmt.Sprintf("http://%s:7789/op2", cli[1])
+			data = fmt.Sprintf("action=%s", action)
 		} else if action == "update" {
-			url = fmt.Sprintf("http://%s:7789/op2?action=%s&ver=%s", cli[1],action,ver)
+			url = fmt.Sprintf("http://%s:7789/op2", cli[1])
+			data = fmt.Sprintf("action=%s&ver=%s", action, ver)
 		} else {
-			url = fmt.Sprintf("http://%s:7789/op?action=%s", cli[1],action)
+			url = fmt.Sprintf("http://%s:7789/op", cli[1])
+			data = fmt.Sprintf("action=%s", action)
 		}
-		mon, _ := pub.Get(url)
-		fmt.Fprint(w, mon)
+		r, _ := pub.PostForm(url, data)
+		fmt.Fprint(w, r)
 	}
-
 }
 
 func PutSerConf(client *etcd.EtcdClient) (err error) {

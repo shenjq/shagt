@@ -91,7 +91,7 @@ func checkPara() error {
 		fmt.Printf("** 未设置日志级别，默认值level=0\n")
 	}
 	if !logdir {
-		fmt.Printf("** 未设置日志目录，不记录日志!!\n")
+		fmt.Printf("** 未设置日志目录!!\n")
 	}
 	return nil
 }
@@ -135,7 +135,6 @@ func main() {
 		glog.V(0).Infof("start server err,%v", err)
 		return
 	}
-
 }
 
 func help(w http.ResponseWriter, r *http.Request) {

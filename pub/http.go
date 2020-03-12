@@ -56,18 +56,17 @@ func Get(url string) (string, error) {
 			return "", err
 		}
 	}
-
 	return result.String(), nil
 }
 
 //dataformat id=1000001&value=20.4&host=ipaddress
-func PostForm(url string, data string) string {
+func PostForm(url string, data string) (string,error) {
 	contentType := "application/x-www-form-urlencoded"
 	return post(url, contentType, strings.NewReader(data))
 }
 
 //dataformat json.Unmarshal([]byte(jsonStr), &data) ##data struct
-func PostJson(url string, data interface{}) string {
+func PostJson(url string, data interface{}) (string,error) {
 	contentType := "application/json"
 	jsonStr, _ := json.Marshal(data)
 	return post(url, contentType, bytes.NewBuffer(jsonStr))
@@ -78,7 +77,7 @@ func PostJson(url string, data interface{}) string {
 // body：        POST请求提交的数据
 // contentType： 请求体格式，如：application/json,application/x-www-form-urlencoded
 // return：     请求放回的内容
-func post(url string, contentType string, body io.Reader) string {
+func post(url string, contentType string, body io.Reader) (string,error) {
 
 	//fmt.Printf("[%v]\n", body)
 	// 超时时间：5秒
@@ -86,10 +85,13 @@ func post(url string, contentType string, body io.Reader) string {
 	resp, err := client.Post(url, contentType, body)
 	if err != nil {
 		glog.V(0).Infof("http post err,%v\n", err)
-		return ""
+		return "",err
 	}
 	defer resp.Body.Close()
 
-	result, _ := ioutil.ReadAll(resp.Body)
-	return string(result)
+	result, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "",err
+	}
+	return string(result),nil
 }

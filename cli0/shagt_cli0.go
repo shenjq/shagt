@@ -151,6 +151,7 @@ func (this *handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	urlStr := r.URL.String()
 	glog.V(0).Infof("Url :%s", urlStr)
 
+	//'/op'接收post请求
 	if urlStr == "/op" || urlStr == "/monitor" {
 		remote, err := url.Parse("http://" + this.host + ":" + this.port)
 		if err != nil {
