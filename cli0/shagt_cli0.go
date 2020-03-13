@@ -251,15 +251,6 @@ func finishHandle() {
 	glog.V(0).Infof("start cli1 done,%v", err)
 }
 
-func startCli0() {
-	//被代理的服务器host和port
-	target := &handle{host: "127.0.0.1", port: "7790"}
-	err := http.ListenAndServe("0.0.0.0:7789", target)
-	if err != nil {
-		glog.V(0).Infof("ListenAndServe err, %v", err)
-	}
-}
-
 func OpCli1() {
 	for {
 		select {
@@ -379,7 +370,7 @@ func downloadFile(url string, localPath string) (err error) {
 	defer resp.Body.Close()
 
 	tmpFilePath := localPath + ".download"
-	file, err := os.Create(tmpFilePath)
+	file, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_RDWR, 0775)
 	if err != nil {
 		return err
 	}
