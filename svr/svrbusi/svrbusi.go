@@ -138,7 +138,6 @@ func getServerList(host string) (list []string) {
 
 func Svr_handler(w http.ResponseWriter, r *http.Request) {
 	var result pub.Resp
-	defer result.Resp(w)
 
 	glog.V(0).Infof("request :%s", r.URL.String())
 
@@ -146,12 +145,14 @@ func Svr_handler(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(tp, "json") { //json格式
 		result.Code = "401"
 		result.Msg = "参数有误,暂不支持json格式"
+		result.Resp(w)
 		return
 	}
 	err := r.ParseForm()
 	if err != nil {
 		result.Code = "401"
 		result.Msg = "参数有误"
+		result.Resp(w)
 		return
 	}
 	h, hok := r.Form["host"]
@@ -159,6 +160,7 @@ func Svr_handler(w http.ResponseWriter, r *http.Request) {
 	if !hok || !aok {
 		result.Code = "401"
 		result.Msg = "参数有误"
+		result.Resp(w)
 		return
 	}
 
@@ -178,6 +180,7 @@ func Svr_handler(w http.ResponseWriter, r *http.Request) {
 	if len(cliList) != 1 {
 		result.Code = "401"
 		result.Msg = fmt.Sprintf("参数有误,请指定服务器,查询服务器列表:%v", cliList)
+		result.Resp(w)
 		return
 	} else {
 		cli := strings.Split(cliList[0], ",") //hostname,ip,pid,ver
