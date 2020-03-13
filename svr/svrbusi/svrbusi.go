@@ -1,6 +1,7 @@
 package svrbusi
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
 	"io/ioutil"
@@ -10,6 +11,7 @@ import (
 	"shagt/etcd"
 	"shagt/pub"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -224,4 +226,46 @@ func PutSerConf(client *etcd.EtcdClient) (err error) {
 		return
 	}
 	return nil
+}
+
+type CliRegInfo struct {
+	Hostname string
+	Ip       string
+	pid      string
+	ver      string
+}
+var gCliRegInfo []CliRegInfo
+func readCliRegInfoFromFile() *[]CliRegInfo{
+	filepath := conf.GetSerConf().CliRegInfo
+	clireginfo := make([]CliRegInfo, 0)
+	if ok, err := pub.IsFile(filepath); !ok {
+		glog.V(0).Infof("CliRegInfo: %s, err: [%v]", filepath, err)
+		return &clireginfo
+	}
+	buf, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		glog.V(0).Infof("read file: %s, err: [%v]", filepath, err)
+		return &clireginfo
+	}
+	err = json.Unmarshal(buf, &clireginfo)
+	if err != nil {
+		glog.V(0).Infof("json.Unmarshal err: [%v]", err)
+		return nil
+	}
+
+	return &clireginfo
+}
+
+func flashCliRegInfoFile(reginfo *[]CliRegInfo) {
+	buf, err := json.MarshalIndent(reginfo, "", "    ")
+	if err != nil {
+		glog.V(0).Infof("json.Marshal err: [%v]", err)
+		return
+	}
+	resultfile := conf.GetSerConf().CliRegInfo
+	syscall.Umask(0000)
+	err = ioutil.WriteFile(resultfile, buf, 0600)
+	if err != nil {
+		glog.V(0).Infof("ioutil.WriteFile failure, err=[%v]\n", err)
+	}
 }

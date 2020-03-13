@@ -21,6 +21,7 @@ type SerConf struct {
 	SoftCheck_key       string
 	SoftCheckList       string
 	CliSoftPath         string
+	CliRegInfo          string
 }
 
 type CliConf struct {
@@ -62,6 +63,9 @@ func InitSerConf(cfgfile string) (err error) {
 	}
 	if !filepath.IsAbs(gSerConf.CliSoftPath) {
 		gSerConf.CliSoftPath = workpath + gSerConf.CliSoftPath
+	}
+	if !filepath.IsAbs(gSerConf.CliRegInfo) {
+		gSerConf.CliSoftPath = workpath + gSerConf.CliRegInfo
 	}
 	glog.V(3).Infof("ser-conf=%v", gSerConf)
 	return
