@@ -167,7 +167,7 @@ func (this *ClientDis) GetService(prefix string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	addrs := this.extractAddrs(resp)
+	addrs := this.extractRegCli(resp)
 
 	go this.watcher(prefix)
 	return addrs, nil
@@ -187,7 +187,7 @@ func (this *ClientDis) watcher(prefix string) {
 	}
 }
 
-func (this *ClientDis) extractAddrs(resp *clientv3.GetResponse) []string {
+func (this *ClientDis) extractRegCli(resp *clientv3.GetResponse) []string {
 	addrs := make([]string, 0)
 	if resp == nil || resp.Kvs == nil {
 		return addrs
