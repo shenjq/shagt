@@ -370,6 +370,7 @@ func downloadFile(url string, localPath string) (err error) {
 	defer resp.Body.Close()
 
 	tmpFilePath := localPath + ".download"
+	syscall.Umask(0000)
 	file, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_RDWR, 0775)
 	if err != nil {
 		return err
