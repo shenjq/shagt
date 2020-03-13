@@ -304,6 +304,7 @@ func startCli1() error {
 	}
 	cmd := exec.Command(gCurrentPath+CLI1NAME, args...)
 	cmd.Start()
+	cmd.Wait()
 	glog.V(0).Infof("%s ....done", gCurrentPath+CLI1NAME)
 
 	err = checkCli1(2)
@@ -344,7 +345,7 @@ func checkCli1(RetryNum int) (err error) {
 }
 
 func updateCli1(ver string) error {
-	urlStr := fmt.Sprintf("https://%s:7788/download?filename=%s%s",
+	urlStr := fmt.Sprintf("http://%s:7788/download?filename=%s%s",
 		gServerAddress, CLI1NAME, strings.TrimSpace(ver))
 	localPath := gCurrentPath + CLI1NAME
 

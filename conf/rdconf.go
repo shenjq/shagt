@@ -54,14 +54,14 @@ func InitSerConf(cfgfile string) (err error) {
 		glog.V(0).Infof("initconf err,%v", err)
 		return
 	}
-	var currentpath string
-	currentpath, err = comm.GetCurrentPath()
+	var workpath string
+	workpath, err = comm.GetWorkPath()
 	if err != nil {
 		glog.V(0).Infof("GetCurrentPath err,%v", err)
 		return
 	}
 	if !filepath.IsAbs(gSerConf.CliSoftPath) {
-		gSerConf.CliSoftPath = currentpath + gSerConf.CliSoftPath
+		gSerConf.CliSoftPath = workpath + gSerConf.CliSoftPath
 	}
 	glog.V(3).Infof("ser-conf=%v", gSerConf)
 	return
