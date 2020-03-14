@@ -131,8 +131,8 @@ func DownloadFile(w http.ResponseWriter, r *http.Request) {
 func getServerList(host string) (list []string) {
 	list = make([]string, 0)
 	for _, v := range gDisCli.ServerList {
-		if len(host) == 0 || strings.Contains(v, host) {
-			list = append(list, v)
+		if len(host) == 0 || strings.Contains(v.Hostname, host) {
+			list = append(list, v.Hostname)
 		}
 	}
 	return
@@ -228,35 +228,41 @@ func PutSerConf(client *etcd.EtcdClient) (err error) {
 	return nil
 }
 
-type CliRegInfo struct {
-	Hostname string
-	Ip       string
-	pid      string
-	ver      string
-}
-var gCliRegInfo []CliRegInfo
-func readCliRegInfoFromFile() *[]CliRegInfo{
-	filepath := conf.GetSerConf().CliRegInfo
-	clireginfo := make([]CliRegInfo, 0)
-	if ok, err := pub.IsFile(filepath); !ok {
-		glog.V(0).Infof("CliRegInfo: %s, err: [%v]", filepath, err)
-		return &clireginfo
-	}
-	buf, err := ioutil.ReadFile(filepath)
-	if err != nil {
-		glog.V(0).Infof("read file: %s, err: [%v]", filepath, err)
-		return &clireginfo
-	}
-	err = json.Unmarshal(buf, &clireginfo)
-	if err != nil {
-		glog.V(0).Infof("json.Unmarshal err: [%v]", err)
-		return nil
-	}
-
-	return &clireginfo
+func FinishHandle() {
+	go SaveCliRegInfo()
+	go httpServerCheck()
 }
 
-func flashCliRegInfoFile(reginfo *[]CliRegInfo) {
+//检查服务是否启动完成
+func httpServerCheck() {
+	for {
+		glog.V(0).Info("checking svr started yet ?")
+		time.Sleep(time.Second)
+		resp, _ := pub.Get("http://localhost:7788/help")
+		if len(strings.TrimSpace(resp)) == 0 {
+			continue
+		} else {
+			glog.V(0).Info("svr has start success!")
+			break
+		}
+	}
+}
+
+func SaveCliRegInfo() {
+	for {
+		time.Sleep(time.Minute * 30)
+		if !gDisCli.NeedFlash {
+			continue
+		}
+		cliinfolist := make([]etcd.CliRegInfo, 0)
+		for _, v := range gDisCli.ServerList {
+			cliinfolist = append(cliinfolist, v)
+		}
+		flashCliRegInfoToFile(&cliinfolist)
+	}
+}
+
+func flashCliRegInfoToFile(reginfo *[]etcd.CliRegInfo) {
 	buf, err := json.MarshalIndent(reginfo, "", "    ")
 	if err != nil {
 		glog.V(0).Infof("json.Marshal err: [%v]", err)

@@ -122,6 +122,8 @@ func main() {
 		return
 	}
 
+	go svrbusi.FinishHandle()
+
 	//start web-server
 	glog.V(0).Info("start server ...")
 	mux := http.NewServeMux()

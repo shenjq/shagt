@@ -2,9 +2,14 @@ package etcd
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/golang/glog"
 	"go.etcd.io/etcd/clientv3"
+	"io/ioutil"
 	"log"
+	"shagt/conf"
+	"shagt/pub"
+	"strings"
 	"time"
 )
 
@@ -146,22 +151,55 @@ func (this *ServiceReg) RevokeLease() error {
 //	select {}
 //}
 //----------------------------------------
+type CliRegInfo struct {
+	Hostname string
+	Ip       string
+	pid      string
+	ver      string
+}
 
 type ClientDis struct {
 	Client     *clientv3.Client
-	ServerList map[string]string
+	ServerList map[string]CliRegInfo
+	NeedFlash  bool
 }
 
 func (this *EtcdClient) NewClientDis() *ClientDis {
 	if this == nil {
 		return nil
 	}
-	return &ClientDis{
+	cliDis := ClientDis{
 		Client:     this.client,
-		ServerList: make(map[string]string),
+		ServerList: make(map[string]CliRegInfo),
+		NeedFlash:  false,
 	}
+	file_info := readCliRegInfoFromFile()
+	for _, v := range *file_info {
+		cliDis.ServerList[v.Hostname] = v
+	}
+	return &cliDis
 }
 
+func readCliRegInfoFromFile() *[]CliRegInfo {
+	filepath := conf.GetSerConf().CliRegInfo
+	clireginfo := make([]CliRegInfo, 0)
+	if ok, err := pub.IsFile(filepath); !ok {
+		glog.V(0).Infof("CliRegInfo: %s, err: [%v]", filepath, err)
+		return &clireginfo
+	}
+	buf, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		glog.V(0).Infof("read file: %s, err: [%v]", filepath, err)
+		return &clireginfo
+	}
+	err = json.Unmarshal(buf, &clireginfo)
+	if err != nil {
+		glog.V(0).Infof("json.Unmarshal err: [%v]", err)
+		return nil
+	}
+
+	return &clireginfo
+}
 func (this *ClientDis) GetService(prefix string) ([]string, error) {
 	resp, err := this.Client.Get(context.Background(), prefix, clientv3.WithPrefix())
 	if err != nil {
@@ -201,21 +239,40 @@ func (this *ClientDis) extractRegCli(resp *clientv3.GetResponse) []string {
 	return addrs
 }
 
+//val format:hostname,ip,pid,ver
 func (this *ClientDis) SetServiceList(key, val string) {
-	this.ServerList[key] = string(val)
+	i := strings.LastIndex(key, "/")
+	if i >= 0 {
+		key = key[i+1:]
+	}
+	valArray := strings.Split(val, ",")
+	newCliinfo := CliRegInfo{
+		Hostname: valArray[0],
+		Ip:       valArray[1],
+		pid:      valArray[2],
+		ver:      valArray[3],
+	}
 	glog.V(3).Infof("discover new service, key :%s,val:%s", key, val)
+	//this.ServerList[key] = string(val)
+	this.ServerList[key] = newCliinfo
+	this.NeedFlash = true
 }
 
 func (this *ClientDis) DelServiceList(key string) {
+	i := strings.LastIndex(key, "/")
+	if i >= 0 {
+		key = key[i+1:]
+	}
 	delete(this.ServerList, key)
+	this.NeedFlash = true
 	log.Println("del data key:", key)
 }
 
 func (this *ClientDis) SerList2Array() []string {
 	addrs := make([]string, 0)
 
-	for _, v := range this.ServerList {
-		addrs = append(addrs, v)
+	for host, _ := range this.ServerList {
+		addrs = append(addrs, host)
 	}
 	return addrs
 }
