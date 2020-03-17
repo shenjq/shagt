@@ -3,6 +3,7 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/golang/glog"
 	"go.etcd.io/etcd/clientv3"
 	"io/ioutil"
@@ -268,11 +269,14 @@ func (this *ClientDis) DelServiceList(key string) {
 	log.Println("del data key:", key)
 }
 
-func (this *ClientDis) SerList2Array() []string {
+func (this *ClientDis) SerList2Array(host string) []string {
 	addrs := make([]string, 0)
 
-	for host, _ := range this.ServerList {
-		addrs = append(addrs, host)
+	for _, v := range this.ServerList {
+		if len(host) == 0 || strings.Contains(v.Hostname, host) {
+			s:=fmt.Sprintf("%s,%s,%s,%s",v.Hostname,v.Ip,v.pid,v.ver)
+			addrs = append(addrs, s)
+		}
 	}
 	return addrs
 }

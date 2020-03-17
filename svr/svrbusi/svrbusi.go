@@ -47,7 +47,7 @@ func Query(w http.ResponseWriter, r *http.Request) {
 	} else {
 		host = stmp[0]
 	}
-	cliList := getServerList(strings.TrimSpace(host))
+	cliList := gDisCli.SerList2Array(strings.TrimSpace(host))
 	if len(cliList) == 0 {
 		result.Code = "401"
 		result.Msg = fmt.Sprintf("参数有误,请指定服务器")
@@ -66,7 +66,13 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 	urlStr := r.URL.String()
 	glog.V(0).Infof("host :%s", urlStr)
 
-	r.ParseForm()
+	err:=r.ParseForm()
+	if err != nil {
+		result.Code = "401"
+		result.Msg = "参数有误"
+		result.Resp(w)
+		return
+	}
 	stmp, ok := r.Form["host"]
 	if !ok {
 		result.Code = "401"
@@ -74,7 +80,7 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 		result.Resp(w)
 	} else {
 		host = stmp[0]
-		cliList := getServerList(strings.TrimSpace(host))
+		cliList := gDisCli.SerList2Array(strings.TrimSpace(host))
 		if len(cliList) != 1 {
 			result.Code = "401"
 			result.Msg = fmt.Sprintf("参数有误,请指定服务器,查询服务器列表:%v", cliList)
@@ -131,6 +137,7 @@ func DownloadFile(w http.ResponseWriter, r *http.Request) {
 func getServerList(host string) (list []string) {
 	list = make([]string, 0)
 	for _, v := range gDisCli.ServerList {
+		//glog.V(0).Infoln(v)
 		if len(host) == 0 || strings.Contains(v.Hostname, host) {
 			list = append(list, v.Hostname)
 		}
@@ -178,7 +185,7 @@ func Svr_handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cliList := getServerList(strings.TrimSpace(host))
+	cliList := gDisCli.SerList2Array(strings.TrimSpace(host))
 	if len(cliList) != 1 {
 		result.Code = "401"
 		result.Msg = fmt.Sprintf("参数有误,请指定服务器,查询服务器列表:%v", cliList)
@@ -250,7 +257,7 @@ func httpServerCheck() {
 
 func SaveCliRegInfo() {
 	for {
-		time.Sleep(time.Minute * 30)
+		time.Sleep(time.Minute)
 		if !gDisCli.NeedFlash {
 			continue
 		}
@@ -259,6 +266,7 @@ func SaveCliRegInfo() {
 			cliinfolist = append(cliinfolist, v)
 		}
 		flashCliRegInfoToFile(&cliinfolist)
+		gDisCli.NeedFlash = false
 	}
 }
 
