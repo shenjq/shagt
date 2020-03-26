@@ -165,13 +165,14 @@ func GetMachineInfo() *MonServer {
 	ss.Host.OS = hinfo.OS
 	if runtime.GOOS == "linux" {
 		osfile := "/etc/redhat-release"
-		ok, _ := pub.IsFile(osfile)
+		ok, err := pub.IsFile(osfile)
+		glog.V(0).Infof("------------read file: %s, err: [%v]", osfile, err)
 		if ok {
 			buf, err := ioutil.ReadFile(osfile)
 			if err != nil {
 				glog.V(0).Infof("read file: %s, err: [%v]", osfile, err)
 			}
-			ss.Host.PlatformVersion = string(buf)
+			ss.Host.PlatformVersion = strings.ReplaceAll(string(buf),"\n","")
 		}
 	}
 	if len(ss.Host.PlatformVersion) == 0 {
