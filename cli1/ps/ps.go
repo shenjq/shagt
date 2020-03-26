@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
@@ -18,6 +19,7 @@ import (
 	"time"
 )
 
+//实时监控数据
 type MonServer struct {
 	Host      HostInfo
 	CPU       CPUInfo
@@ -25,10 +27,13 @@ type MonServer struct {
 	Swap      SwapInfo
 	Interface []InterfaceInfo
 	Sys       SysInfo
-	Nfs       []NfsInfo
-	Process   []ProcessInfo
-	Soft      []SoftInfo
+	//Nfs       []NfsInfo
+	Fs      []Partition
+	Process []ProcessInfo
+	Soft    []SoftInfo
 }
+
+//配置管理数据
 type CMStru struct {
 	Host      Host
 	Cpu       CPU
@@ -36,8 +41,9 @@ type CMStru struct {
 	Swap      Swap
 	Interface []Interface
 	Sys       SysInfo
-	NFS       []NfsInfo
-	Soft      []SoftInfo
+	//NFS       []NfsInfo
+	Fs   []Partition
+	Soft []SoftInfo
 }
 
 type HostInfo struct {
@@ -101,6 +107,12 @@ type NfsInfo struct {
 	NfsName    string
 	MountPoint string
 }
+type Partition struct {
+	Device     string
+	Mountpoint string
+	Fstype     string
+	Opts       string
+}
 
 type ProcessInfo struct {
 	Port       uint32
@@ -141,6 +153,7 @@ func GetMachineInfo() *MonServer {
 	swap, _ := mem.SwapMemory()    //total/UsedPercent
 
 	inet, _ := net.Interfaces()
+	d, _ := disk.Partitions(true)
 
 	//proc, _ := process.Processes()
 
@@ -171,6 +184,9 @@ func GetMachineInfo() *MonServer {
 
 	ss.Interface = make([]InterfaceInfo, 0)
 	for _, v := range inet {
+		if v.Name == "lo0" {
+			continue
+		}
 		n := InterfaceInfo{
 			Name:  v.Name,
 			Addrs: make([]string, 0),
@@ -180,6 +196,17 @@ func GetMachineInfo() *MonServer {
 			n.Addrs = append(n.Addrs, vv.Addr)
 		}
 		ss.Interface = append(ss.Interface, n)
+	}
+
+	ss.Fs = make([]Partition, 0)
+	for _, v := range d {
+		pt := Partition{
+			Device:     v.Device,
+			Mountpoint: v.Mountpoint,
+			Fstype:     v.Fstype,
+			Opts:       v.Opts,
+		}
+		ss.Fs = append(ss.Fs, pt)
 	}
 
 	ss.Process = make([]ProcessInfo, 0)
@@ -402,6 +429,10 @@ func (ss *MonServer) getCM() *CMStru {
 		}
 		cm.Interface = append(cm.Interface, inet)
 	}
+	cm.Fs = make([]Partition, 0)
+	for _, v := range ss.Fs {
+		cm.Fs = append(cm.Fs, v)
+	}
 	cm.Sys.Dns = ss.Sys.Dns
 	cm.Sys.HasNtp = ss.Sys.HasNtp
 	cm.Sys.HasIptable = ss.Sys.HasIptable
@@ -494,8 +525,8 @@ func (cm *CMStru) generateKV() *map[string]string {
 	m["Sys.HasNtp"] = fmt.Sprintf("%v", cm.Sys.HasNtp)
 	m["Sys.HasIptable"] = fmt.Sprintf("%v", cm.Sys.HasIptable)
 
-	for _, v := range cm.NFS {
-		m["NFS."+v.MountPoint] = fmt.Sprintf("%s|%s", v.NfsName, v.NfsSvr)
+	for _, v := range cm.Fs {
+		m["FS."+v.Mountpoint] = fmt.Sprintf("%s|%s|%s|%s", v.Device, v.Mountpoint, v.Fstype, v.Opts)
 	}
 
 	for _, v := range cm.Soft {
