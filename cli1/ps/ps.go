@@ -11,6 +11,7 @@ import (
 	"github.com/shirou/gopsutil/net"
 	"github.com/shirou/gopsutil/process"
 	"io/ioutil"
+	"runtime"
 	"shagt/comm"
 	"shagt/conf"
 	"shagt/pub"
@@ -159,9 +160,23 @@ func GetMachineInfo() *MonServer {
 
 	ss := new(MonServer)
 
-	ss.Host.Hostname = hinfo.Hostname
+	//ss.Host.Hostname = hinfo.Hostname
+	ss.Host.Hostname = conf.GetCliConf().LocalHostName
 	ss.Host.OS = hinfo.OS
-	ss.Host.PlatformVersion = hinfo.PlatformVersion
+	if runtime.GOOS == "linux" {
+		osfile := "/etc/redhat-release"
+		ok, _ := pub.IsFile(osfile)
+		if ok {
+			buf, err := ioutil.ReadFile(osfile)
+			if err != nil {
+				glog.V(0).Infof("read file: %s, err: [%v]", osfile, err)
+			}
+			ss.Host.PlatformVersion = string(buf)
+		}
+	}
+	if len(ss.Host.PlatformVersion) == 0 {
+		ss.Host.PlatformVersion = hinfo.PlatformVersion
+	}
 	ss.Host.KernelVersion = hinfo.KernelVersion
 	ss.Host.Uptime = hinfo.Uptime
 	ss.Host.BootTime = hinfo.BootTime
