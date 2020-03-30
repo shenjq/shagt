@@ -11,6 +11,7 @@ import (
 	"github.com/shirou/gopsutil/net"
 	"github.com/shirou/gopsutil/process"
 	"io/ioutil"
+	"os/user"
 	"runtime"
 	"shagt/comm"
 	"shagt/conf"
@@ -52,7 +53,7 @@ type HostInfo struct {
 	OS              string
 	PlatformVersion string
 	KernelVersion   string
-	BootTime        uint64
+	BootTime        string
 	Uptime          uint64
 }
 type Host struct {
@@ -119,7 +120,7 @@ type ProcessInfo struct {
 	Port       uint32
 	Username   string
 	Pid        int32
-	CreateTime int64
+	CreateTime string
 	Cmdline    string
 	Note       string
 }
@@ -154,7 +155,7 @@ func GetMachineInfo() *MonServer {
 	swap, _ := mem.SwapMemory()    //total/UsedPercent
 
 	inet, _ := net.Interfaces()
-	d, _ := disk.Partitions(true)
+	d, _ := disk.Partitions(false)
 
 	//proc, _ := process.Processes()
 
@@ -165,14 +166,13 @@ func GetMachineInfo() *MonServer {
 	ss.Host.OS = hinfo.OS
 	if runtime.GOOS == "linux" {
 		osfile := "/etc/redhat-release"
-		ok, err := pub.IsFile(osfile)
-		glog.V(0).Infof("------------read file: %s, err: [%v]", osfile, err)
+		ok, _ := pub.IsFile(osfile)
 		if ok {
 			buf, err := ioutil.ReadFile(osfile)
 			if err != nil {
 				glog.V(0).Infof("read file: %s, err: [%v]", osfile, err)
 			}
-			ss.Host.PlatformVersion = strings.ReplaceAll(string(buf),"\n","")
+			ss.Host.PlatformVersion = strings.ReplaceAll(string(buf), "\n", "")
 		}
 	}
 	if len(ss.Host.PlatformVersion) == 0 {
@@ -180,7 +180,8 @@ func GetMachineInfo() *MonServer {
 	}
 	ss.Host.KernelVersion = hinfo.KernelVersion
 	ss.Host.Uptime = hinfo.Uptime
-	ss.Host.BootTime = hinfo.BootTime
+	//ss.Host.BootTime = hinfo.BootTime
+	ss.Host.BootTime = pub.Timestamp2Str1(int64(hinfo.BootTime))
 
 	ss.CPU.CoreNum = cpu_num
 	ss.CPU.UsedPercent = func(p []float64) float64 {
@@ -231,7 +232,7 @@ func GetMachineInfo() *MonServer {
 	//	proc_map[v.Pid] = v
 	//}
 	pidlist_check := make([]int32, 0)
-	conn, _ := net.Connections("all")
+	conn, _ := net.Connections("tcp4")
 	for _, v2 := range conn {
 		if v2.Status == "LISTEN" {
 			p := process.Process{
@@ -239,11 +240,21 @@ func GetMachineInfo() *MonServer {
 			}
 			ctm, _ := p.CreateTime()
 			cmd, _ := p.Cmdline()
+			uids, _ := p.Uids()
+			uname := ""
+			if len(uids) > 0 {
+				u, err := user.LookupId(fmt.Sprintf("%d", uids[0]))
+				if err != nil {
+					glog.V(0).Infof("获取username err,%v", err)
+				} else {
+					uname = u.Username
+				}
+			}
 			proc_entry := ProcessInfo{
 				Port:       v2.Laddr.Port,
-				Username:   "",
+				Username:   uname,
 				Pid:        v2.Pid,
-				CreateTime: ctm,
+				CreateTime: pub.Timestamp2Str1(ctm/1000),
 				Cmdline:    cmd,
 				Note:       "",
 			}

@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func MathTrunc(f float64, n int) float64 {
@@ -53,5 +54,18 @@ func ExecOSCmd(cmd string) (string, error) {
 	glog.V(0).Infof("err:%v", e)
 
 	glog.V(0).Infof("%v ....done", cd.Args)
-	return strings.ReplaceAll(o.String(),"\n",""), nil
+	return strings.ReplaceAll(o.String(), "\n", ""), nil
+}
+
+const (
+	timeTemplate1 = "2006-01-02 15:04:05" //常规类型
+	timeTemplate2 = "2006/01/02 15:04:05" //其他类型
+	timeTemplate3 = "2006-01-02"          //其他类型
+	timeTemplate4 = "20060102"
+	timeTemplate5 = "15:04:05" //其他类型
+)
+
+//timeTemplate1 = "2006-01-02 15:04:05"
+func Timestamp2Str1(d int64) string {
+	return time.Unix(d, 0).Format(timeTemplate1)
 }
