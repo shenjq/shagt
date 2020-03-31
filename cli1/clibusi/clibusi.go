@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime"
 	"shagt/cli1/clilogmon"
 	"shagt/cli1/ps"
 	"shagt/comm"
@@ -154,8 +155,8 @@ func DoCliReg(client *etcd.EtcdClient) error {
 	}
 	cliconf := conf.GetCliConf()
 	key := "cli/reg/" + cliconf.LocalHostName
-	value := fmt.Sprintf("%s,%s,%d,%s",
-		cliconf.LocalHostName, cliconf.LocalHostIp, os.Getpid(), comm.G_CliInfo.Version)
+	value := fmt.Sprintf("%s,%s,%d,%s,%s",
+		cliconf.LocalHostName, cliconf.LocalHostIp, os.Getpid(), comm.G_CliInfo.Version,runtime.GOOS)
 
 	err = serreg.PutService(key, value)
 	if err != nil {

@@ -86,7 +86,7 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 			result.Msg = fmt.Sprintf("参数有误,请指定服务器,查询服务器列表:%v", cliList)
 			result.Resp(w)
 		} else {
-			cli := strings.Split(cliList[0], ",") //hostname,ip,pid,ver
+			cli := strings.Split(cliList[0], ",") //hostname,ip,pid,ver,os
 			url := fmt.Sprintf("http://%s:7789/monitor", cli[1])
 			mon, _ := pub.Get(url)
 			fmt.Fprint(w, mon)

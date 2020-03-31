@@ -157,6 +157,7 @@ type CliRegInfo struct {
 	Ip       string
 	pid      string
 	ver      string
+	os       string
 }
 
 type ClientDis struct {
@@ -240,7 +241,7 @@ func (this *ClientDis) extractRegCli(resp *clientv3.GetResponse) []string {
 	return addrs
 }
 
-//val format:hostname,ip,pid,ver
+//val format:hostname,ip,pid,ver,os
 func (this *ClientDis) SetServiceList(key, val string) {
 	i := strings.LastIndex(key, "/")
 	if i >= 0 {
@@ -252,6 +253,7 @@ func (this *ClientDis) SetServiceList(key, val string) {
 		Ip:       valArray[1],
 		pid:      valArray[2],
 		ver:      valArray[3],
+		os:       valArray[4],
 	}
 	glog.V(3).Infof("discover new service, key :%s,val:%s", key, val)
 	//this.ServerList[key] = string(val)
@@ -274,7 +276,7 @@ func (this *ClientDis) SerList2Array(host string) []string {
 
 	for _, v := range this.ServerList {
 		if len(host) == 0 || strings.Contains(v.Hostname, host) {
-			s:=fmt.Sprintf("%s,%s,%s,%s",v.Hostname,v.Ip,v.pid,v.ver)
+			s := fmt.Sprintf("%s,%s,%s,%s", v.Hostname, v.Ip, v.pid, v.ver, v.os)
 			addrs = append(addrs, s)
 		}
 	}
