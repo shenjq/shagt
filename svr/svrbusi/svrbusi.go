@@ -17,6 +17,8 @@ import (
 
 var gDisCli *etcd.ClientDis
 
+var gCH_cm = make(chan string, 1024)
+
 func DiscoverSer(client *etcd.EtcdClient) (err error) {
 	gDisCli = client.NewClientDis()
 	_, err = gDisCli.GetService("cli/")
@@ -66,7 +68,7 @@ func GetInfo(w http.ResponseWriter, r *http.Request) {
 	urlStr := r.URL.String()
 	glog.V(0).Infof("host :%s", urlStr)
 
-	err:=r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		result.Code = "401"
 		result.Msg = "参数有误"
@@ -210,6 +212,60 @@ func Svr_handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func Upcm_handler(w http.ResponseWriter, r *http.Request) {
+	//var cm comm.CMStru
+	var result pub.Resp
+	var body_str string
+
+	defer result.Resp(w)
+
+	tp := r.Header.Get("Content-Type")
+	if strings.Count(tp, "json") == 1 { //json格式
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			glog.V(0).Infof("ReadAll err:%v", err)
+			result.Code = "401"
+			result.Msg = "读取参数有误"
+			return
+		}
+		body_str = string(body)
+		glog.V(3).Infof("json格式请求报文:%s\n", body_str)
+		//err = json.Unmarshal(body, &cm)
+		//if err != nil {
+		//	result.Code = "401"
+		//	result.Msg = fmt.Sprintf("参数有误,%v", err)
+		//	return
+		//}
+	}
+
+	gCH_cm <- body_str
+
+	result.Msg = "提交成功"
+	result.Code = "200"
+}
+
+func do_update_cm() {
+	//cmdburl := conf.GetSerConf().CmdbAddress_value
+	for {
+		//测试cmdb接口是否可达
+
+		//从通道处读取数据
+		v, ok := <-gCH_cm
+		if !ok {
+			glog.V(1).Infof("数据读取完毕.")
+			break
+		}
+		glog.V(3).Infof("处理服务从通道获取数据:[%v]\n", v)
+
+		//post 调用cmdb提供的接口
+		//r, err := pub.PostJson(cmdburl, v)
+		//glog.V(3).Infof("处理结果%s\n", r)
+		//if err != nil {
+		//	glog.V(0).Infof("updatecm failed,err:%v\n", err)
+		//}
+	}
+}
+
 func PutSerConf(client *etcd.EtcdClient) (err error) {
 	svrconf := conf.GetSerConf()
 	if err = client.PutKey(svrconf.ServerAddress_key, svrconf.ServerAddress_value); err != nil {
@@ -238,6 +294,7 @@ func PutSerConf(client *etcd.EtcdClient) (err error) {
 func FinishHandle() {
 	go SaveCliRegInfo()
 	go httpServerCheck()
+	go do_update_cm()
 }
 
 //检查服务是否启动完成
