@@ -246,7 +246,8 @@ func updateCM() error {
 	select {
 	case <-comm.G_ExecSque.Ch_GetParaFormEtcdDone:
 		glog.V(3).Infof("getparaformetcd success,start GetMachineInfo ...")
-		ps.GetMachineInfo()
+		ss:=ps.GetMachineInfo()
+		ps.CheckCM(ss)
 		return nil
 	case <-timeout:
 		glog.V(3).Infof("*** getparaformetcd timeout !!!")
