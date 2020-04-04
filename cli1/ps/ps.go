@@ -254,7 +254,7 @@ func GetMachineInfo() *MonServer {
 				Port:       v2.Laddr.Port,
 				Username:   uname,
 				Pid:        v2.Pid,
-				CreateTime: pub.Timestamp2Str1(ctm/1000),
+				CreateTime: pub.Timestamp2Str1(ctm / 1000),
 				Cmdline:    cmd,
 				Note:       "",
 			}
@@ -291,17 +291,7 @@ func GetMachineInfo() *MonServer {
 	}
 	ss.Soft = *getSoftWareVer(&softAll)
 
-	//检查发送给配置库的信息是否有更新
-	ss.CheckCM()
-
 	return ss
-
-	//b, err := json.MarshalIndent(ss, "", "    ")
-	//if err != nil {
-	//	return ""
-	//} else {
-	//	return string(b)
-	//}
 }
 
 func getSoftWareVer(softmap_now *map[string]SoftInfo) *[]SoftInfo {
@@ -377,9 +367,20 @@ func flashSoftCheckFile(softlist *[]SoftInfo) {
 	}
 }
 
-func (ss *MonServer) CheckCM() error {
+func CheckCM(ss *MonServer) error {
 	//生成最新配置信息
-	cm_now := ss.getCM()
+	cm_now := getCM(ss)
+
+	//提交至svr端，svr端插入通道后即返回，再由svr端单独服务统一发送至cmdb，避免cmdb并发不够
+	upcmUrl := fmt.Sprintf("http://%s:7788/updatecm", comm.G_ReadFromServerConf.ServerAddress)
+	glog.V(3).Infof("提交cmdb配置信息:%v", ss)
+	r, err := pub.PostJson(upcmUrl, cm_now)
+	glog.V(3).Infof("result:%s", r)
+	if err != nil {
+		glog.V(0).Infof("提交失败:%v", err)
+	}
+
+	//比较本地保存的配置信息，如果cmdb端负责检查更新，则本地不需要比较，后续跟进情况更新后续代码
 	if gCM_last == nil {
 		cm_file, err := readCfgManageFile()
 		if err == nil {
@@ -391,7 +392,7 @@ func (ss *MonServer) CheckCM() error {
 	glog.V(3).Infof("配置变动信息:%v", cmup)
 
 	gCM_last = cm_now
-	gCM_last.flashCfgManageFile()
+	flashCfgManageFile()
 
 	return nil
 }
@@ -416,7 +417,7 @@ func readCfgManageFile() (*CMStru, error) {
 	return cm_his, nil
 }
 
-func (cm *CMStru) flashCfgManageFile() {
+func flashCfgManageFile() {
 	buf, err := json.MarshalIndent(gCM_last, "", "    ")
 	if err != nil {
 		glog.V(0).Infof("json.Marshal err: [%v]", err)
@@ -430,7 +431,7 @@ func (cm *CMStru) flashCfgManageFile() {
 	}
 }
 
-func (ss *MonServer) getCM() *CMStru {
+func getCM(ss *MonServer) *CMStru {
 	var cm *CMStru
 	if ss == nil {
 		return cm
@@ -478,8 +479,8 @@ func (ss *MonServer) getCM() *CMStru {
 }
 
 func comprareCM(now, last *CMStru) *[]CmUp {
-	m_now := now.generateKV()
-	m_last := last.generateKV()
+	m_now := generateKV(now)
+	m_last := generateKV(last)
 	map_union := make(map[string]string, 0)
 	cmupList := make([]CmUp, 0)
 	for k, v := range *m_now {
@@ -514,7 +515,7 @@ func comprareCM(now, last *CMStru) *[]CmUp {
 	return &cmupList
 }
 
-func (cm *CMStru) generateKV() *map[string]string {
+func generateKV(cm *CMStru) *map[string]string {
 	m := make(map[string]string, 0)
 	if cm == nil {
 		return &m
