@@ -81,7 +81,8 @@ func CliLogMon() {
 func ConnectCM() {
 	select {
 	case <-comm.G_ExecSque.Ch_ConnectCMStart:
-		ps.GetMachineInfo()
+		ss := ps.GetMachineInfo()
+		ps.CheckCM(ss)
 	}
 }
 
@@ -156,7 +157,7 @@ func DoCliReg(client *etcd.EtcdClient) error {
 	cliconf := conf.GetCliConf()
 	key := "cli/reg/" + cliconf.LocalHostName
 	value := fmt.Sprintf("%s,%s,%d,%s,%s",
-		cliconf.LocalHostName, cliconf.LocalHostIp, os.Getpid(), comm.G_CliInfo.Version,runtime.GOOS)
+		cliconf.LocalHostName, cliconf.LocalHostIp, os.Getpid(), comm.G_CliInfo.Version, runtime.GOOS)
 
 	err = serreg.PutService(key, value)
 	if err != nil {
@@ -176,14 +177,26 @@ func addCheckFileScheme() {
 	//定时任务时间，暂定每天7:00--8:00
 	rand.Seed(time.Now().UnixNano())
 	spec := fmt.Sprintf("%d 7 * * *", rand.Intn(59))
-	glog.V(1).Infof("执行时间:%s", spec)
-	err := c.AddFunc(spec, func() {
+	glog.V(1).Infof("容灾文件变化检查执行时间:%s", spec)
+	var err error
+	err = c.AddFunc(spec, func() {
 		pub.CheckFile(conf.GetCliConf().DrCheckFilePath)
 	})
 	if err != nil {
 		glog.V(0).Infof("addfunc err,%v", err)
 		return
 	}
+	spec2 := fmt.Sprintf("%d 6 * * *", rand.Intn(59))
+	glog.V(1).Infof("更新配置文件执行时间:%s", spec2)
+	err = c.AddFunc(spec, func() {
+		ss := ps.GetMachineInfo()
+		ps.CheckCM(ss)
+	})
+	if err != nil {
+		glog.V(0).Infof("addfunc err,%v", err)
+		return
+	}
+
 	c.Start()
 	defer c.Stop()
 	select {}
@@ -246,7 +259,7 @@ func updateCM() error {
 	select {
 	case <-comm.G_ExecSque.Ch_GetParaFormEtcdDone:
 		glog.V(3).Infof("getparaformetcd success,start GetMachineInfo ...")
-		ss:=ps.GetMachineInfo()
+		ss := ps.GetMachineInfo()
 		ps.CheckCM(ss)
 		return nil
 	case <-timeout:
