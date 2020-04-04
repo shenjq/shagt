@@ -7,7 +7,6 @@ import (
 	"github.com/golang/glog"
 	"go.etcd.io/etcd/clientv3"
 	"io/ioutil"
-	"log"
 	"shagt/conf"
 	"shagt/pub"
 	"strings"
@@ -266,9 +265,13 @@ func (this *ClientDis) DelServiceList(key string) {
 	if i >= 0 {
 		key = key[i+1:]
 	}
-	delete(this.ServerList, key)
+	//delete(this.ServerList, key)
+	s := this.ServerList[key]
+	s.pid = ""
+	s.ver = ""
+	this.ServerList[key] = s
 	this.NeedFlash = true
-	log.Println("del data key:", key)
+	glog.V(3).Infof("host %s logout", key)
 }
 
 func (this *ClientDis) SerList2Array(host string) []string {
@@ -276,7 +279,7 @@ func (this *ClientDis) SerList2Array(host string) []string {
 
 	for _, v := range this.ServerList {
 		if len(host) == 0 || strings.Contains(v.Hostname, host) {
-			s := fmt.Sprintf("%s,%s,%s,%s", v.Hostname, v.Ip, v.pid, v.ver, v.os)
+			s := fmt.Sprintf("%s,%s,%s,%s,%s", v.Hostname, v.Ip, v.pid, v.ver, v.os)
 			addrs = append(addrs, s)
 		}
 	}
