@@ -132,6 +132,7 @@ func main() {
 	mux.HandleFunc("/query", pub.Middle(svrbusi.Query))
 	mux.HandleFunc("/getinfo", pub.Middle(svrbusi.GetInfo))
 	mux.HandleFunc("/download", pub.Middle(svrbusi.DownloadFile))
+	mux.HandleFunc("/updatecm", pub.Middle(svrbusi.Upcm_handler))
 	err = http.ListenAndServe("0.0.0.0:7788", mux)
 	if err != nil {
 		glog.V(0).Infof("start server err,%v", err)
