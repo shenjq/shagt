@@ -370,11 +370,27 @@ func flashSoftCheckFile(softlist *[]SoftInfo) {
 func CheckCM(ss *MonServer) error {
 	//生成最新配置信息
 	cm_now := getCM(ss)
+	type DataStru struct {
+		Type          string  `json:"type"`          //cmdb-host
+		User          string  `json:"user"`          //admin
+		MatchKeyValue string  `json:"matchKeyValue"` //ip or hostname
+		Option        string  `json:"option"`        //create /update/delete
+		IsAutoCommit  bool    `json:"isAutoCommit"`  //true or false
+		Data          *CMStru `json:"data"`
+	}
 
+	d := DataStru{
+		Type:          "cmdb-host",
+		User:          "admin",
+		MatchKeyValue: conf.GetCliConf().LocalHostIp,
+		Option:        "update",
+		IsAutoCommit:  true,
+		Data:          cm_now,
+	}
 	//提交至svr端，svr端插入通道后即返回，再由svr端单独服务统一发送至cmdb，避免cmdb并发不够
 	upcmUrl := fmt.Sprintf("http://%s:7788/updatecm", comm.G_ReadFromServerConf.ServerAddress)
-	glog.V(3).Infof("提交cmdb配置信息:%v", ss)
-	r, err := pub.PostJson(upcmUrl, cm_now)
+	glog.V(3).Infof("提交cmdb配置信息:%v", d)
+	r, err := pub.PostJson(upcmUrl, d)
 	glog.V(3).Infof("result:%s", r)
 	if err != nil {
 		glog.V(0).Infof("提交失败:%v", err)
