@@ -245,7 +245,7 @@ func Upcm_handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func do_update_cm() {
-	//cmdburl := conf.GetSerConf().CmdbAddress_value
+	cmdburl := conf.GetSerConf().CmdbAddress_value
 	for {
 		//测试cmdb接口是否可达
 
@@ -258,11 +258,11 @@ func do_update_cm() {
 		glog.V(3).Infof("处理服务从通道获取数据:[%v]\n", v)
 
 		//post 调用cmdb提供的接口
-		//r, err := pub.PostJson(cmdburl, v)
-		//glog.V(3).Infof("处理结果%s\n", r)
-		//if err != nil {
-		//	glog.V(0).Infof("updatecm failed,err:%v\n", err)
-		//}
+		r, err := pub.PostJson(cmdburl, v)
+		glog.V(3).Infof("处理结果%s\n", r)
+		if err != nil {
+			glog.V(0).Infof("updatecm failed,err:%v\n", err)
+		}
 	}
 }
 
