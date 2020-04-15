@@ -201,7 +201,7 @@ func GetMachineInfo() *MonServer {
 
 	ss.Interface = make([]InterfaceInfo, 0)
 	for _, v := range inet {
-		if v.Name == "lo0" {
+		if strings.HasPrefix(v.Name,"lo") || len(strings.TrimSpace(v.HardwareAddr))==0{
 			continue
 		}
 		n := InterfaceInfo{
