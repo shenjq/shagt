@@ -5,6 +5,7 @@ import (
 	"gopkg.in/ini.v1"
 	"path/filepath"
 	"shagt/comm"
+	"shagt/pub"
 	"strings"
 )
 
@@ -56,7 +57,7 @@ func InitSerConf(cfgfile string) (err error) {
 		return
 	}
 	var workpath string
-	workpath, err = comm.GetWorkPath()
+	workpath, err = pub.GetWorkPath()
 	if err != nil {
 		glog.V(0).Infof("GetCurrentPath err,%v", err)
 		return
@@ -79,10 +80,10 @@ func InitCliConf(cfgfile string) (err error) {
 		return
 	}
 	if strings.TrimSpace(gCliConf.LocalHostName) == "" { //获取本机hostname
-		gCliConf.LocalHostName = comm.GetHostName()
+		gCliConf.LocalHostName = pub.GetHostName()
 	}
 	if strings.TrimSpace(gCliConf.LocalHostIp) == "" { //获取本机ip
-		gCliConf.LocalHostIp = comm.GetMgrIP(gCliConf.LocalNetTarget)
+		gCliConf.LocalHostIp = pub.GetMgrIP(gCliConf.LocalNetTarget)
 	}
 	if !filepath.IsAbs(gCliConf.CliLogMonPath) {
 		gCliConf.CliLogMonPath = comm.G_CliInfo.WorkPath + gCliConf.CliLogMonPath

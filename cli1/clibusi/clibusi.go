@@ -90,9 +90,21 @@ func CheckDrFile() {
 	for {
 		select {
 		case <-comm.G_ExecSque.Ch_CheckFileStart:
-			pub.CheckFile(conf.GetCliConf().DrCheckFilePath)
+			result, err := pub.CheckFile(conf.GetCliConf().DrCheckFilePath)
 			comm.G_ExecSque.Ch_CheckFileDone <- struct{}{}
+			if err != nil {
+				glog.V(0).Infof("CheckDrFile err:%v", err)
+			}
+			syncDrFile(result)
 		}
+	}
+}
+
+//处理发生变动的文件的同步操作
+func syncDrFile(stru *[]pub.FileMd5Stru) {
+	glog.V(0).Infof("发生变动的文件列表:")
+	for _, v := range *stru {
+		glog.V(0).Infof("%s,%s,%s", v.Filepath, v.Md5str, v.Note)
 	}
 }
 
@@ -156,6 +168,7 @@ func DoCliReg(client *etcd.EtcdClient) error {
 	}
 	cliconf := conf.GetCliConf()
 	key := "cli/reg/" + cliconf.LocalHostName
+	//hostname，ip，pid，version，os
 	value := fmt.Sprintf("%s,%s,%d,%s,%s",
 		cliconf.LocalHostName, cliconf.LocalHostIp, os.Getpid(), comm.G_CliInfo.Version, runtime.GOOS)
 

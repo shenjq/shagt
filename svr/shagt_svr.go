@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"shagt/comm"
 	"shagt/conf"
 	"shagt/etcd"
 	"shagt/pub"
@@ -17,7 +16,7 @@ import (
 
 //var gCurrentPath string
 var gWorkPath string
-var gConfFile string    //配置文件路径
+var gConfFile string //配置文件路径
 var Version = ""
 var BuildTime = ""
 
@@ -25,7 +24,7 @@ func init() {
 	isVer := flag.Bool("ver", false, "print program build version")
 	isDaemon := flag.Bool("d", false, "run app as a daemon with -d=true")
 	var err error
-	gWorkPath, err = comm.GetWorkPath()
+	gWorkPath, err = pub.GetWorkPath()
 	if err != nil {
 		fmt.Printf("GetWorkPath err,%v\n", err)
 		os.Exit(0)
@@ -128,11 +127,11 @@ func main() {
 	glog.V(0).Info("start server ...")
 	mux := http.NewServeMux()
 	mux.HandleFunc("/help", pub.Middle(help))
-	mux.HandleFunc("/op", pub.Middle(svrbusi.Svr_handler))
-	mux.HandleFunc("/query", pub.Middle(svrbusi.Query))
-	mux.HandleFunc("/getinfo", pub.Middle(svrbusi.GetInfo))
-	mux.HandleFunc("/download", pub.Middle(svrbusi.DownloadFile))
-	mux.HandleFunc("/updatecm", pub.Middle(svrbusi.Upcm_handler))
+	mux.HandleFunc("/query", pub.Middle(svrbusi.Query))           //用户查询注册信息
+	mux.HandleFunc("/getinfo", pub.Middle(svrbusi.GetInfo))       //用户查询单台服务器信息，通过服务器向客户端请求
+	mux.HandleFunc("/op", pub.Middle(svrbusi.Svr_handler))        //用户操作客户端
+	mux.HandleFunc("/download", pub.Middle(svrbusi.DownloadFile)) //cli0向服务器端请求
+	mux.HandleFunc("/updatecm", pub.Middle(svrbusi.Upcm_handler)) //cli1向服务器端发送请求
 	err = http.ListenAndServe("0.0.0.0:7788", mux)
 	if err != nil {
 		glog.V(0).Infof("start server err,%v", err)

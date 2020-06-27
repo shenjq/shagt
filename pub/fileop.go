@@ -44,7 +44,9 @@ func CheckFile(cfgfile string) (*[]FileMd5Stru, error) {
 	result := compareFileMd5List(FileMd5List_now, gFileMd5list_last)
 	glog.V(3).Infof("result:%v", result)
 	gFileMd5list_last = FileMd5List_now
-	flashMd5ResultFile(cfgfile + ".result")
+	if len(*result) > 0 {
+		flashMd5ResultFile(cfgfile + ".result")
+	}
 	return result, nil
 }
 func flashMd5ResultFile(resultfile string) {

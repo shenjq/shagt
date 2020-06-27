@@ -19,22 +19,7 @@ var gDisCli *etcd.ClientDis
 
 var gCH_cm = make(chan string, 1024)
 
-func DiscoverSer(client *etcd.EtcdClient) (err error) {
-	gDisCli = client.NewClientDis()
-	_, err = gDisCli.GetService("cli/")
-	if err != nil {
-		glog.V(0).Infof("GetService err,%v", err)
-		return
-	}
-	go dispSer()
-	return nil
-}
-func dispSer() {
-	for ; ; {
-		glog.V(3).Infof("---->regserver:%v", gDisCli.ServerList)
-		time.Sleep(time.Second * 5)
-	}
-}
+//用户查询服务器端已注册的服务器信息
 func Query(w http.ResponseWriter, r *http.Request) {
 	var result pub.Resp
 	var host string
@@ -229,13 +214,11 @@ func Upcm_handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		body_str = string(body)
-		glog.V(3).Infof("json格式请求报文:%s\n", body_str)
-		//err = json.Unmarshal(body, &cm)
-		//if err != nil {
-		//	result.Code = "401"
-		//	result.Msg = fmt.Sprintf("参数有误,%v", err)
-		//	return
-		//}
+		glog.V(3).Infof("update-cm,json格式请求报文:%s\n", body_str)
+	} else {
+		result.Code = "401"
+		result.Msg = "暂只支持json格式"
+		return
 	}
 
 	gCH_cm <- body_str
@@ -289,6 +272,24 @@ func PutSerConf(client *etcd.EtcdClient) (err error) {
 		return
 	}
 	return nil
+}
+
+func DiscoverSer(client *etcd.EtcdClient) (err error) {
+	gDisCli = client.NewClientDis()
+	_, err = gDisCli.GetService("cli/")
+	if err != nil {
+		glog.V(0).Infof("GetService err,%v", err)
+		return
+	}
+	go dispSer()
+	return nil
+}
+
+func dispSer() {
+	for ; ; {
+		glog.V(3).Infof("---->regserver:%v", gDisCli.ServerList)
+		time.Sleep(time.Second * 5)
+	}
 }
 
 func FinishHandle() {

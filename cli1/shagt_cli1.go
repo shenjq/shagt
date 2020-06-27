@@ -24,7 +24,7 @@ func init() {
 	isVer := flag.Bool("ver", false, "print program build version")
 	isDaemon := flag.Bool("d", false, "run app as a daemon with -d=true")
 	var err error
-	gWorkPath, err = comm.GetWorkPath()
+	gWorkPath, err = pub.GetWorkPath()
 	if err != nil {
 		fmt.Printf("GetWorkPath err,%v\n", err)
 		os.Exit(0)
