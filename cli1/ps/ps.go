@@ -232,8 +232,8 @@ func GetMachineInfo() *MonServer {
 	//	proc_map[v.Pid] = v
 	//}
 	pidlist_check := make([]int32, 0)
-	conn, _ := net.Connections("tcp")
 	listenPortList := make([]uint32, 0)
+	conn, _ := net.Connections("tcp")
 	for _, v2 := range conn {
 		if v2.Status == "LISTEN" {
 			for i := 0; i < len(listenPortList)-1; i++ {
@@ -299,6 +299,21 @@ func GetMachineInfo() *MonServer {
 	}
 	ss.Soft = *getSoftWareVer(&softAll)
 
+	if runtime.GOOS == "linux" {
+		dns, err := ioutil.ReadFile("/etc/resolv.conf")
+		if err != nil {
+			glog.V(0).Info("读取dns配置文件失败,%v", err)
+		} else {
+			ss.Sys.Dns = string(dns)
+		}
+		ntp, err := pub.ExecOSCmd("ntpstat")
+		if err != nil {
+			glog.V(0).Info("执行ntpstat err,%v", err)
+		} else {
+			ss.Sys.HasNtp = strings.Contains(ntp, "synchronised to NTP")
+		}
+	}
+
 	return ss
 }
 
@@ -327,7 +342,7 @@ func getSoftWareVer(softmap_now *map[string]SoftInfo) *[]SoftInfo {
 			if err != nil {
 				glog.V(3).Infof("脚本命令获取版本失败,%v", err)
 			} else {
-				v.Ver = ver
+				v.Ver = strings.ReplaceAll(ver, "\n", "")
 			}
 			softList_now = append(softList_now, v)
 			continue
