@@ -239,10 +239,9 @@ func GetMachineInfo() *MonServer {
 			for i := 0; i < len(listenPortList)-1; i++ {
 				if listenPortList[i] == v2.Laddr.Port {
 					goto nextrecord
-				} else {
-					listenPortList = append(listenPortList, v2.Laddr.Port)
 				}
 			}
+			listenPortList = append(listenPortList, v2.Laddr.Port)
 			p := process.Process{
 				Pid: v2.Pid,
 			}
