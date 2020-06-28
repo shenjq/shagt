@@ -60,7 +60,7 @@ func ExecOSCmd(cmd string) (string, error) {
 	glog.V(0).Infof("err:%v", e)
 
 	glog.V(0).Infof("%v ....done", cd.Args)
-	return strings.ReplaceAll(o.String(), "\n", ""), nil
+	return o.String(), nil
 }
 
 const (
