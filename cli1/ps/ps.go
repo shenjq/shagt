@@ -201,7 +201,7 @@ func GetMachineInfo() *MonServer {
 
 	ss.Interface = make([]InterfaceInfo, 0)
 	for _, v := range inet {
-		if strings.HasPrefix(v.Name,"lo") || len(strings.TrimSpace(v.HardwareAddr))==0{
+		if strings.HasPrefix(v.Name, "lo") || len(strings.TrimSpace(v.HardwareAddr)) == 0 {
 			continue
 		}
 		n := InterfaceInfo{
@@ -232,9 +232,17 @@ func GetMachineInfo() *MonServer {
 	//	proc_map[v.Pid] = v
 	//}
 	pidlist_check := make([]int32, 0)
-	conn, _ := net.Connections("tcp4")
+	conn, _ := net.Connections("tcp")
+	listenPortList := make([]uint32, 0)
 	for _, v2 := range conn {
 		if v2.Status == "LISTEN" {
+			for i := 0; i < len(listenPortList)-1; i++ {
+				if listenPortList[i] == v2.Laddr.Port {
+					goto nextrecord
+				} else {
+					listenPortList = append(listenPortList, v2.Laddr.Port)
+				}
+			}
 			p := process.Process{
 				Pid: v2.Pid,
 			}
@@ -261,6 +269,7 @@ func GetMachineInfo() *MonServer {
 			ss.Process = append(ss.Process, proc_entry)
 			pidlist_check = append(pidlist_check, v2.Pid)
 		}
+	nextrecord:
 	}
 
 	//softWareList := []string{"tomcat", "webshpere", "redis", "zookeeper", "dubbo", "qq", "Goland"}
