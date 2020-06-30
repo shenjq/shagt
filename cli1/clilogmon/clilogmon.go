@@ -95,8 +95,9 @@ func (le *CliLogEntry) watchlog() {
 		select {
 		case line := <-le.LogTail.Lines:
 			glog.V(3).Infof("read data:%s", line.Text)
+			//发送预警信息
 		default:
-			time.Sleep(time.Millisecond * 50)
+			time.Sleep(time.Second)
 		}
 	}
 }
