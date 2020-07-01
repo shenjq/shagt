@@ -412,23 +412,23 @@ func CheckCM(ss *MonServer) error {
 	}
 
 	//比较本地保存的配置信息，如果cmdb端负责检查更新，则本地不需要比较，后续跟进情况更新后续代码
-	if gCM_last == nil {
-		cm_file, err := readCfgManageFile()
-		if err == nil {
-			gCM_last = cm_file
-		}
+	cm_file, cm_err := readCfgManageFile()
+	if cm_err == nil  {
+		gCM_last = cm_file
 	}
+
 	//生成提交给配置库的信息（变动信息）
 	cmup := comprareCM(cm_now, gCM_last)
-	//更新配置信息文件
+
 	gCM_last = cm_now
-	flashCfgManageFile()
 
 	if len(*cmup) == 0 { //配置信息没有变化
 		glog.V(3).Infof("配置信息没有变动")
 		return nil
 	}
+
 	glog.V(3).Infof("配置变动信息:%v", cmup)
+	flashCfgManageFile() //更新配置信息文件
 	//提交至svr端，svr端插入通道后即返回，再由svr端单独服务统一发送至cmdb，避免cmdb并发不够
 	upcmUrl := fmt.Sprintf("http://%s:7788/updatecm", comm.G_ReadFromServerConf.ServerAddress)
 	glog.V(3).Infof("提交cmdb配置信息:%v", d)
@@ -436,6 +436,7 @@ func CheckCM(ss *MonServer) error {
 	glog.V(3).Infof("result:%s", r)
 	if err != nil {
 		glog.V(0).Infof("提交失败:%v", err)
+		return err
 	}
 
 	return nil
