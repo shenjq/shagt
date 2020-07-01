@@ -288,7 +288,7 @@ func DiscoverSer(client *etcd.EtcdClient) (err error) {
 func dispSer() {
 	for ; ; {
 		glog.V(3).Infof("---->regserver:%v", gDisCli.ServerList)
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 30)
 	}
 }
 
@@ -303,7 +303,7 @@ func httpServerCheck() {
 	for {
 		glog.V(0).Info("checking svr started yet ?")
 		time.Sleep(time.Second)
-		resp, _ := pub.Get("http://localhost:7788/help")
+		resp, _ := pub.Get("http://127.0.0.1:7788/help")
 		if len(strings.TrimSpace(resp)) == 0 {
 			continue
 		} else {
