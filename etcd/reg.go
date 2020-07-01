@@ -118,10 +118,10 @@ func (this *ServiceReg) ListenLeaseRespChan() {
 		select {
 		case leaseKeepResp := <-this.keepAliveChan:
 			if leaseKeepResp == nil {
-				glog.V(3).Info("已经关闭续租功能")
+				glog.V(0).Info("已经关闭续租功能")
 				return
 			} else {
-				glog.V(3).Info("续租成功")
+				glog.V(4).Info("续租成功")
 			}
 		}
 	}
