@@ -69,7 +69,7 @@ func PostForm(url string, data string) (string,error) {
 func PostJson(url string, data interface{}) (string,error) {
 	contentType := "application/json"
 	jsonStr, _ := json.Marshal(data)
-	return post(url, contentType, bytes.NewBuffer(jsonStr))
+	return post(url, contentType, bytes.NewReader(jsonStr))
 }
 
 // 发送POST请求
