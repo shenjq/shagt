@@ -71,10 +71,14 @@ func CliReg(client *etcd.EtcdClient) {
 	}
 }
 
+//监控日志文件，在程序启动时注册后台运行
 func CliLogMon() {
 	select {
 	case <-comm.G_ExecSque.Ch_CliLogMonStart:
-		clilogmon.CliLogMonInit()
+		if err := clilogmon.CliLogMonInit(); err != nil {
+			glog.V(0).Infof("CliLogMonInit err,%v", err)
+			return
+		}
 	}
 }
 
@@ -86,6 +90,7 @@ func ConnectCM() {
 	}
 }
 
+//监控容灾文件变化情况，每日定期执行，更改文件内容无需重启
 func CheckDrFile() {
 	for {
 		select {
@@ -94,8 +99,9 @@ func CheckDrFile() {
 			comm.G_ExecSque.Ch_CheckFileDone <- struct{}{}
 			if err != nil {
 				glog.V(0).Infof("CheckDrFile err:%v", err)
+			} else {
+				syncDrFile(result)
 			}
-			syncDrFile(result)
 		}
 	}
 }
