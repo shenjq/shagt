@@ -68,9 +68,14 @@ func PostForm(url string, data string) (string,error) {
 //dataformat json.Unmarshal([]byte(jsonStr), &data) ##data struct
 func PostJson(url string, data interface{}) (string,error) {
 	contentType := "application/json"
-	jsonStr, _ := json.Marshal(data)
-	glog.V(0).Info("[%s]",string(jsonStr))
-	return post(url, contentType, bytes.NewReader(jsonStr))
+	//jsonStr, _ := json.Marshal(data)
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	encoder.Encode(data)
+	glog.V(0).Infof("[%s]",buffer.String())
+	return post(url, contentType, buffer)
+	//return post(url, contentType, bytes.NewReader(jsonStr))
 }
 
 // 发送POST请求
