@@ -69,6 +69,7 @@ func PostForm(url string, data string) (string,error) {
 func PostJson(url string, data interface{}) (string,error) {
 	contentType := "application/json"
 	jsonStr, _ := json.Marshal(data)
+	glog.V(0).Info("[%s]",string(jsonStr))
 	return post(url, contentType, bytes.NewReader(jsonStr))
 }
 
