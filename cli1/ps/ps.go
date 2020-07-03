@@ -413,7 +413,7 @@ func CheckCM(ss *MonServer) error {
 
 	//比较本地保存的配置信息，如果cmdb端负责检查更新，则本地不需要比较，后续跟进情况更新后续代码
 	cm_file, cm_err := readCfgManageFile()
-	if cm_err == nil  {
+	if cm_err == nil {
 		gCM_last = cm_file
 	}
 
@@ -432,6 +432,8 @@ func CheckCM(ss *MonServer) error {
 	//提交至svr端，svr端插入通道后即返回，再由svr端单独服务统一发送至cmdb，避免cmdb并发不够
 	upcmUrl := fmt.Sprintf("http://%s:7788/updatecm", comm.G_ReadFromServerConf.ServerAddress)
 	glog.V(3).Infof("提交cmdb配置信息:%v", d)
+	jsonbytes,_ := json.Marshal(d)
+	glog.V(0).Infof("[%s]", string(jsonbytes))
 	r, err := pub.PostJson(upcmUrl, d)
 	glog.V(3).Infof("result:%s", r)
 	if err != nil {
