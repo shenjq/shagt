@@ -210,7 +210,7 @@ func GetMachineInfo() *MonServer {
 			Mac:   v.HardwareAddr,
 		}
 		for _, vv := range v.Addrs {
-			n.Addrs = append(n.Addrs, vv.Addr)
+			n.Addrs = append(n.Addrs, vv.Addr[:strings.Index(vv.Addr,"/")])  //去掉掩码
 		}
 		ss.Interface = append(ss.Interface, n)
 	}
