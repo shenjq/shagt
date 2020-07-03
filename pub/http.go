@@ -3,7 +3,6 @@ package pub
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/golang/glog"
 	"io"
 	"io/ioutil"
@@ -61,19 +60,17 @@ func Get(url string) (string, error) {
 }
 
 //dataformat id=1000001&value=20.4&host=ipaddress
-func PostForm(url string, data string) (string,error) {
+func PostForm(url string, data string) (string, error) {
 	contentType := "application/x-www-form-urlencoded"
 	return post(url, contentType, strings.NewReader(data))
 }
 
 //dataformat json.Unmarshal([]byte(jsonStr), &data) ##data struct
-func PostJson(url string, data interface{}) (string,error) {
+func PostJson(url, data string) (string, error) {
 	contentType := "application/json"
 	//jsonStr, _ := json.Marshal(data)
 	//return post(url, contentType, bytes.NewReader(jsonStr))
-	jsonStr := fmt.Sprintf("%v",data)
-	glog.V(0).Infof("[%s]", jsonStr)
-	return post(url, contentType, strings.NewReader(jsonStr))
+	return post(url, contentType, strings.NewReader(data))
 }
 
 // 发送POST请求
@@ -81,7 +78,7 @@ func PostJson(url string, data interface{}) (string,error) {
 // body：        POST请求提交的数据
 // contentType： 请求体格式，如：application/json,application/x-www-form-urlencoded
 // return：     请求放回的内容
-func post(url string, contentType string, body io.Reader) (string,error) {
+func post(url string, contentType string, body io.Reader) (string, error) {
 
 	//fmt.Printf("[%v]\n", body)
 	// 超时时间：5秒
@@ -89,13 +86,13 @@ func post(url string, contentType string, body io.Reader) (string,error) {
 	resp, err := client.Post(url, contentType, body)
 	if err != nil {
 		glog.V(0).Infof("http post err,%v\n", err)
-		return "",err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	result, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "",err
+		return "", err
 	}
-	return string(result),nil
+	return string(result), nil
 }

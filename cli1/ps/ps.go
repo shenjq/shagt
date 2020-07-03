@@ -431,10 +431,9 @@ func CheckCM(ss *MonServer) error {
 	flashCfgManageFile() //更新配置信息文件
 	//提交至svr端，svr端插入通道后即返回，再由svr端单独服务统一发送至cmdb，避免cmdb并发不够
 	upcmUrl := fmt.Sprintf("http://%s:7788/updatecm", comm.G_ReadFromServerConf.ServerAddress)
-	glog.V(3).Infof("提交cmdb配置信息:%v", d)
 	jsonbytes,_ := json.Marshal(d)
-	glog.V(0).Infof("[%s]", string(jsonbytes))
-	r, err := pub.PostJson(upcmUrl, d)
+	glog.V(3).Infof("提交cmdb配置信息:%s", string(jsonbytes))
+	r, err := pub.PostJson(upcmUrl, string(jsonbytes))
 	glog.V(3).Infof("result:%s", r)
 	if err != nil {
 		glog.V(0).Infof("提交失败:%v", err)
