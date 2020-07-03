@@ -3,6 +3,7 @@ package pub
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/golang/glog"
 	"io"
 	"io/ioutil"
@@ -69,13 +70,10 @@ func PostForm(url string, data string) (string,error) {
 func PostJson(url string, data interface{}) (string,error) {
 	contentType := "application/json"
 	//jsonStr, _ := json.Marshal(data)
-	buffer := &bytes.Buffer{}
-	encoder := json.NewEncoder(buffer)
-	encoder.SetEscapeHTML(false)
-	encoder.Encode(data)
-	glog.V(0).Infof("[%s]",buffer.String())
-	return post(url, contentType, buffer)
 	//return post(url, contentType, bytes.NewReader(jsonStr))
+	jsonStr := fmt.Sprintf("%v",data)
+	glog.V(0).Infof("[%s]", jsonStr)
+	return post(url, contentType, strings.NewReader(jsonStr))
 }
 
 // 发送POST请求
