@@ -132,7 +132,7 @@ func main() {
 	mux.HandleFunc("/op", pub.Middle(svrbusi.Svr_handler))        //用户操作客户端
 	mux.HandleFunc("/download", pub.Middle(svrbusi.DownloadFile)) //cli0向服务器端请求
 	mux.HandleFunc("/updatecm", pub.Middle(svrbusi.Upcm_handler)) //cli1向服务器端发送请求
-	err = http.ListenAndServe("0.0.0.0:7788", mux)
+	err = http.ListenAndServe("0.0.0.0:17788", mux)
 	if err != nil {
 		glog.V(0).Infof("start server err,%v", err)
 		return
@@ -140,7 +140,7 @@ func main() {
 }
 
 func help(w http.ResponseWriter, r *http.Request) {
-	hostaddr := "http://ip:7788"
+	hostaddr := "http://ip:17788"
 	fmt.Fprintf(w, "主机监控管理,接收GET/POST请求,支持form格式.\n")
 	fmt.Fprintf(w, "Usage:\n")
 	fmt.Fprintf(w, "查询当前注册客户端列表: %s/query 接受host，支持模糊查询\n", hostaddr) //2.22
@@ -155,7 +155,7 @@ func help(w http.ResponseWriter, r *http.Request) {
 
 	//关闭，重启
 	fmt.Fprintf(w, "客户端程序重启:")
-	fmt.Fprintf(w, "\tcurl -X POST %s/op -d 'host=CA3001&action=stop/start/reboot' \n", hostaddr)
+	fmt.Fprintf(w, "\tcurl -X POST %s/op -d 'host=CA3001&action=stop/start/restart' \n", hostaddr)
 	//升级
 	fmt.Fprintf(w, "客户端程序升级,未指定版本则最新版本:")
 	fmt.Fprintf(w, "\tcurl -X POST %s/op -d 'host=CA3001&action=update&ver=0.2' \n", hostaddr)

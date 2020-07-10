@@ -16,7 +16,7 @@ import (
 
 //var gCurrentPath string //命令当前路径
 var gWorkPath string
-var gConfFile string    //配置文件路径
+var gConfFile string //配置文件路径
 var Version = ""
 var BuildTime = ""
 
@@ -158,7 +158,7 @@ func main() {
 	mux.HandleFunc("/op", pub.Middle(clibusi.Op))
 	mux.HandleFunc("/monitor", pub.Middle(clibusi.Monitor))
 	mux.HandleFunc("/check", pub.Middle(clibusi.Check)) //获取服务器端地址、cli1进程号
-	err = http.ListenAndServe("0.0.0.0:7790", mux)
+	err = http.ListenAndServe("0.0.0.0:17790", mux)
 	if err != nil {
 		glog.V(0).Infof("start server err,%v", err)
 		return
@@ -166,20 +166,13 @@ func main() {
 }
 
 func help(w http.ResponseWriter, r *http.Request) {
-	hostaddr := "http://ip:7790"
-	fmt.Fprintf(w, "主机监控cli1,接收POST请求,支持form格式.\n")
+	//hostaddr := "http://ip:17790"
+	fmt.Fprintf(w, "主机端agent程序cli1,接收POST请求,支持form格式.\n")
 	fmt.Fprintf(w, "Usage:\n")
-	fmt.Fprintf(w, "查询当前注册客户端列表: %s/query 接受host，支持模糊查询\n", hostaddr)
-	fmt.Fprintf(w, "操作客户端: %s/op  接受host,action,note\n", hostaddr)
-	fmt.Fprintf(w, "示例:\n")
-	fmt.Fprintf(w, "curl -X POST  http://ip:8080/idx -d 'id=1000001&value=20.4&host=ipaddress/hostname' \n")
-	fmt.Fprintf(w, "curl http://ip:8080/idx?id=1000001&value=20.4&host=ipaddress/hostname \n")
-	fmt.Fprintf(w, "curl -X POST  http://ip:8080/tm -d 'id=1000001&stat=s/f/e&note=说明&host=ipaddress/hostname' \n")
-	fmt.Fprintf(w, "curl %s/query?host=CA3001 \n", hostaddr)
-	fmt.Fprintf(w, "curl %s/query?host=3001 \n", hostaddr)
-	fmt.Fprintf(w, "curl %s/query?host=192.168.0 \n", hostaddr)
-	//关闭，重启
-	fmt.Fprintf(w, "curl -X POST %s/op -d 'id=1000001&value=20.4&host=ipaddress/hostname' \n", hostaddr)
+	fmt.Fprintf(w, "   /op 接受action=updatecm/checkfile\n")
+	fmt.Fprintf(w, "   /monitor 主机信息。\n")
+	fmt.Fprintf(w, "   /check   健康检查。\n")
+
 	//升级
 	//客户端fw
 	//收集配置信息

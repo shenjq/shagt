@@ -127,6 +127,7 @@ func init() {
 	gCh_Cli1Start <- struct{}{}
 }
 
+//本程序用途：1）代理至cli1;2）对cli1进行重启、更新操作
 func main() {
 	flag.Parse()
 
@@ -136,8 +137,8 @@ func main() {
 	go finishHandle()
 
 	//被代理的服务器host和port
-	target := &handle{host: "127.0.0.1", port: "7790"}
-	err := http.ListenAndServe("0.0.0.0:7789", target)
+	target := &handle{host: "127.0.0.1", port: "17790"}
+	err := http.ListenAndServe("0.0.0.0:17789", target)
 	if err != nil {
 		glog.V(0).Infof("ListenAndServe err, %v", err)
 	}
@@ -151,7 +152,7 @@ func (this *handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	glog.V(0).Infof("Url :%s", urlStr)
 
 	//'/op'接收post请求
-	if urlStr == "/op" || urlStr == "/monitor" {
+	if urlStr == "/op" || urlStr == "/monitor" { //直接代理至本机17790端口
 		remote, err := url.Parse("http://" + this.host + ":" + this.port)
 		if err != nil {
 			glog.V(0).Infof("url.Parse err,%v", err)
@@ -314,7 +315,7 @@ func checkCli1(RetryNum int) (err error) {
 	var resp *Cli1Resp
 	var str_ret string
 	for i := 0; i <= RetryNum; i++ {
-		str_ret, err = pub.Get("http://127.0.0.1:7790/check")
+		str_ret, err = pub.Get("http://127.0.0.1:17790/check")
 		if err != nil {
 			time.Sleep(time.Second)
 			continue
@@ -335,7 +336,7 @@ func checkCli1(RetryNum int) (err error) {
 }
 
 func updateCli1(ver string) error {
-	urlStr := fmt.Sprintf("http://%s:7788/download?filename=%s%s",
+	urlStr := fmt.Sprintf("http://%s:17788/download?filename=%s%s",
 		gServerAddress, CLI1NAME, strings.TrimSpace(ver))
 	localPath := gCurrentPath + CLI1NAME
 
