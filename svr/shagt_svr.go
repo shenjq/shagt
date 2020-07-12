@@ -132,6 +132,7 @@ func main() {
 	mux.HandleFunc("/op", pub.Middle(svrbusi.Svr_handler))        //用户操作客户端
 	mux.HandleFunc("/download", pub.Middle(svrbusi.DownloadFile)) //cli0向服务器端请求
 	mux.HandleFunc("/updatecm", pub.Middle(svrbusi.Upcm_handler)) //cli1向服务器端发送请求
+	mux.HandleFunc("/warn", pub.Middle(svrbusi.WarnToEC))         //接收预警事件请求并转发
 	err = http.ListenAndServe("0.0.0.0:17788", mux)
 	if err != nil {
 		glog.V(0).Infof("start server err,%v", err)
@@ -166,6 +167,10 @@ func help(w http.ResponseWriter, r *http.Request) {
 	//检查文件更新
 	fmt.Fprintf(w, "检查客户端的服务器容灾文件变动情况:")
 	fmt.Fprintf(w, "\tcurl -X POST %s/op -d 'host=CA3001&action=checkfile' \n", hostaddr)
+	//接收预警事件请求
+	fmt.Fprintf(w, "接收预警事件请求并转发至事件中心,接收POST请求,支持form/json格式:\n")
+	fmt.Fprintf(w, "\tcurl -X POST %s/warn -d 'key1=val1&key2=val2...' \n", hostaddr)
+	fmt.Fprintf(w, "\tcurl -X POST %s/warn -d '{json格式数据}' \n", hostaddr)
 
 }
 
