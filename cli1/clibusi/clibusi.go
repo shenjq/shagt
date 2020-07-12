@@ -50,7 +50,7 @@ func HttpServerCheck() {
 	for {
 		glog.V(0).Info("checking cli1 has started yet ?")
 		time.Sleep(time.Second)
-		resp, _ := pub.Get("http://127.0.0.1:7790/help")
+		resp, _ := pub.Get("http://127.0.0.1:17790/help")
 		if len(strings.TrimSpace(resp)) == 0 {
 			continue
 		} else {
