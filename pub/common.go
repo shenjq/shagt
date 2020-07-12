@@ -69,11 +69,19 @@ const (
 	timeTemplate3 = "2006-01-02"          //其他类型
 	timeTemplate4 = "20060102"
 	timeTemplate5 = "15:04:05" //其他类型
+	timeTemplate6 = "20060102150405"
 )
 
 //timeTemplate1 = "2006-01-02 15:04:05"
 func Timestamp2Str1(d int64) string {
 	return time.Unix(d, 0).Format(timeTemplate1)
+}
+
+func GetTimeStr1() string {
+	return time.Now().Format(timeTemplate1)
+}
+func GetTimeStr6() string {
+	return time.Now().Format(timeTemplate6)
 }
 
 func GetCurrentPath() (string, error) {
