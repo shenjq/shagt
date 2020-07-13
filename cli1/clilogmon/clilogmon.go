@@ -153,7 +153,7 @@ func handleLog(flag int8, logconf *CliLogConf, text string) {
 		if i1 < 0 || i2 < 0 {
 			winfo.Summary = fmt.Sprintf("日志文件%s发现WARNTOEC预警,但预警格式有误!", logconf.Path)
 		} else {
-			logstr := text[i1:i2]
+			logstr := text[i1:i2+1]
 			err := json.Unmarshal([]byte(logstr), &winfo)
 			if err != nil {
 				winfo.Summary = fmt.Sprintf("日志文件%s,发现WARNTOEC预警,但预警格式有误!", logconf.Path)
