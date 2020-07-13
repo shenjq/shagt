@@ -138,6 +138,7 @@ func (le *CliLogEntry) watchlog() {
 func handleLog(flag int8, logconf *CliLogConf, text string) {
 	type warninfo struct {
 		Id_original string `json:"id_original"`
+		Source      string `json:"source"`
 		Ip          string `json:"ip"`
 		Severity    string `json:"severity"`
 		Title       string `json:"title"`
@@ -151,13 +152,13 @@ func handleLog(flag int8, logconf *CliLogConf, text string) {
 		i1 := strings.Index(text, "{")
 		i2 := strings.LastIndex(text, "}")
 		if i1 < 0 || i2 < 0 {
-			glog.V(0).Infof("预警格式有误,i1=%d,i2=%d\n", i1,i2)
+			glog.V(0).Infof("预警格式有误,i1=%d,i2=%d\n", i1, i2)
 			winfo.Summary = fmt.Sprintf("日志文件%s发现WARNTOEC预警,但预警格式有误!", logconf.Path)
 		} else {
-			logstr := text[i1:i2+1]
+			logstr := text[i1 : i2+1]
 			err := json.Unmarshal([]byte(logstr), &winfo)
 			if err != nil {
-				glog.V(0).Infof("预警格式[%s]有误,%v\n", logstr,err)
+				glog.V(0).Infof("预警格式[%s]有误,%v\n", logstr, err)
 				winfo.Summary = fmt.Sprintf("日志文件%s,发现WARNTOEC预警,但预警格式有误!", logconf.Path)
 			}
 		}
@@ -167,6 +168,7 @@ func handleLog(flag int8, logconf *CliLogConf, text string) {
 		winfo.Id_original = logconf.System
 	}
 	winfo.Ip = conf.GetCliConf().LocalHostIp
+	winfo.Source = "logfile"
 
 	upcmUrl := fmt.Sprintf("http://%s:17788/warn", comm.G_ReadFromServerConf.ServerAddress)
 	jsonbytes, _ := json.Marshal(winfo)

@@ -517,6 +517,9 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	if len(warninfo.Status)== 0 {
 		warninfo.Status = "1"  //打开事件
 	}
+	if len(warninfo.Source)== 0 {
+		warninfo.Status = "agent"  //代理渠道
+	}
 }
 
 func doSendtoEC() {
