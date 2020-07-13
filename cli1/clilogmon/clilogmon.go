@@ -168,7 +168,7 @@ func handleLog(flag int8, logconf *CliLogConf, text string) {
 		winfo.Id_original = logconf.System
 	}
 	winfo.Ip = conf.GetCliConf().LocalHostIp
-	winfo.Source = "logfile"
+	winfo.Source = "RT_logfile"
 
 	upcmUrl := fmt.Sprintf("http://%s:17788/warn", comm.G_ReadFromServerConf.ServerAddress)
 	jsonbytes, _ := json.Marshal(winfo)

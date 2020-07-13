@@ -518,7 +518,7 @@ func prepareWarninfo(warninfo *WarnInfo) {
 		warninfo.Status = "1"  //打开事件
 	}
 	if len(warninfo.Source)== 0 {
-		warninfo.Status = "agent"  //代理渠道
+		warninfo.Status = "RT_agent"  //代理渠道
 	}
 }
 
