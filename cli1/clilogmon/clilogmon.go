@@ -109,7 +109,7 @@ func (le *CliLogEntry) watchlog() {
 	for ; ; {
 		select {
 		case line := <-le.LogTail.Lines:
-			glog.V(3).Infof("read data:%s", line.Text)
+			glog.V(4).Infof("read data:%s", line.Text)
 			catch := false
 			//发送预警信息
 			if flag == 2 {
