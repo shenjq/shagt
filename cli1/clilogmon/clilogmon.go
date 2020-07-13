@@ -1,11 +1,15 @@
 package clilogmon
 
 import (
-	"shagt/conf"
 	"encoding/json"
+	"fmt"
 	"github.com/golang/glog"
 	"github.com/hpcloud/tail"
 	"io/ioutil"
+	"shagt/comm"
+	"shagt/conf"
+	"shagt/pub"
+	"strings"
 	"time"
 )
 
@@ -42,7 +46,7 @@ func CliLogMonInit() (err error) {
 		le, err := li.newClilogEntry()
 		if err != nil {
 			glog.V(0).Infof("newClilogEntry err,%v", err)
-			return err
+			continue
 		}
 		go le.watchlog()
 		gCliLogEntry = append(gCliLogEntry, *le)
@@ -91,13 +95,83 @@ func (this *CliLogConf) newClilogEntry() (le *CliLogEntry, err error) {
 
 func (le *CliLogEntry) watchlog() {
 	glog.V(3).Infof("sendlog:%v", le)
+	var flag int8
+	var keywords []string
+	if len(le.CliLogConf.Keyword) == 0 {
+		flag = 1
+	} else if strings.Contains(le.CliLogConf.Keyword, "WARNTOEC") {
+		flag = 2
+	} else {
+		flag = 3
+		keywords = strings.Split(le.CliLogConf.Keyword, "|")
+	}
+
 	for ; ; {
 		select {
 		case line := <-le.LogTail.Lines:
 			glog.V(3).Infof("read data:%s", line.Text)
+			catch := false
 			//发送预警信息
+			if flag == 2 {
+				if strings.Contains(line.Text, "WARNTOEC") {
+					catch = true
+				}
+			} else if flag == 3 {
+				for _, k := range keywords {
+					if strings.Contains(line.Text, k) {
+						catch = true
+						break
+					}
+				}
+			} else {
+				catch = true
+			}
+			if catch {
+				handleLog(flag, &le.CliLogConf, line.Text)
+			}
 		default:
 			time.Sleep(time.Second)
 		}
+	}
+}
+
+func handleLog(flag int8, logconf *CliLogConf, text string) {
+	type warninfo struct {
+		Id_original string `json:"id_original"`
+		Ip          string `json:"ip"`
+		Severity    string `json:"severity"`
+		Title       string `json:"title"`
+		Summary     string `json:"summary"`
+		Status      string `json:"status"`
+	}
+	winfo := new(warninfo)
+	if flag == 1 || flag == 3 {
+		winfo.Summary = fmt.Sprintf("日志文件%s发现预警信息:%s", logconf.Path, text)
+	} else {
+		i1 := strings.Index(text, "{")
+		i2 := strings.LastIndex(text, "}")
+		if i1 < 0 || i2 < 0 {
+			winfo.Summary = fmt.Sprintf("日志文件%s发现WARNTOEC预警,但预警格式有误!", logconf.Path)
+		} else {
+			logstr := text[i1:i2]
+			err := json.Unmarshal([]byte(logstr), &winfo)
+			if err != nil {
+				winfo.Summary = fmt.Sprintf("日志文件%s,发现WARNTOEC预警,但预警格式有误!", logconf.Path)
+			}
+		}
+	}
+	winfo.Title = fmt.Sprintf("日志文件%s发现预警信息", logconf.Path)
+	if len(logconf.System) > 0 && len(winfo.Id_original) == 0 {
+		winfo.Id_original = logconf.System
+	}
+	winfo.Ip = conf.GetCliConf().LocalHostIp
+
+	upcmUrl := fmt.Sprintf("http://%s:17788/warn", comm.G_ReadFromServerConf.ServerAddress)
+	jsonbytes, _ := json.Marshal(winfo)
+	glog.V(3).Infof("提交预警事件信息:%s", string(jsonbytes))
+	r, err := pub.PostJson(upcmUrl, string(jsonbytes))
+	glog.V(3).Infof("result:%s", r)
+	if err != nil {
+		glog.V(0).Infof("提交失败:%v", err)
 	}
 }

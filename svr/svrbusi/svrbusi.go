@@ -302,7 +302,7 @@ func FinishHandle() {
 	go SaveCliRegInfo()
 	go httpServerCheck()
 	go do_update_cm()
-	go readOriginalid()
+	go genOriginalid()
 	go doSendtoEC()
 }
 
@@ -366,15 +366,15 @@ type WarnInfo struct {
 	Summary          string `json:"summary"`
 	First_occurrence string `json:"first_occurrence"`
 	Status           string `json:"status"` //1打开,2自动关闭，告警解除后请求端传入；3运维人员手工关闭；4第三方关闭；
-	ShowTimes        string `json:"show_times"`
-	NoticeWay        string `json:"notice_way"`
-	NoticeEmpNo1     string `json:"notice_emp_no_1"`
-	NoticeEmpNo2     string `json:"notice_emp_no_2"`
-	NoticeEmpNo3     string `json:"notice_emp_no_3"`
-	NoticeEmpNo4     string `json:"notice_emp_no_4"`
-	Filed1           string `json:"filed_1"`
-	Filed2           string `json:"filed_2"`
-	Filed3           string `json:"filed_3"`
+	ShowTimes        string `json:"showtimes"`
+	NoticeWay        string `json:"noticeway"`
+	NoticeEmpNo1     string `json:"noticeempno1"`
+	NoticeEmpNo2     string `json:"noticeempno2"`
+	NoticeEmpNo3     string `json:"noticeempno3"`
+	NoticeEmpNo4     string `json:"noticeempno4"`
+	Filed1           string `json:"filed1"`
+	Filed2           string `json:"filed2"`
+	Filed3           string `json:"filed3"`
 }
 
 //1、解析接收到的报文，给结构体赋值
@@ -460,12 +460,8 @@ func WarnToEC(w http.ResponseWriter, r *http.Request) {
 	result.Resp(w)
 }
 
-//var gLast_id_original string
-
-//var gWg *sync.WaitGroup
-//var gRWmutex *sync.Mutex
-
-func readOriginalid() {
+//根据请求生成original_id
+func genOriginalid() {
 	var lasttm, now, id string
 	var num int8
 	for {
@@ -477,9 +473,7 @@ func readOriginalid() {
 		}
 		glog.V(3).Infof("------请求生成originalid\n")
 		now = pub.GetTimeStr6()
-		if len(lasttm) == 0 {
-			num = 1
-		} else if strings.Compare(lasttm, now) == 0 {
+		if strings.Compare(lasttm, now) == 0 {
 			num++
 		} else {
 			num = 1
@@ -507,7 +501,9 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	if len(warninfo.First_occurrence) == 0 {
 		warninfo.First_occurrence = pub.GetTimeStr1()
 	}
-
+	if len(warninfo.Category) == 0 {
+		warninfo.Category = "web"
+	}
 	if len(warninfo.ShowTimes) == 0 {
 		warninfo.ShowTimes = "900"
 	}
