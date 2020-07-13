@@ -294,7 +294,7 @@ func DiscoverSer(client *etcd.EtcdClient) (err error) {
 func dispSer() {
 	for ; ; {
 		glog.V(3).Infof("---->regserver:%v", gDisCli.ServerList)
-		time.Sleep(time.Second * 30)
+		time.Sleep(time.Second * 60)
 	}
 }
 
@@ -498,6 +498,7 @@ func prepareWarninfo(warninfo *WarnInfo) {
 		glog.V(0).Infof("新的事件id:%s", warninfo.Id_original)
 	}
 
+	//设置默认值
 	if len(warninfo.First_occurrence) == 0 {
 		warninfo.First_occurrence = pub.GetTimeStr1()
 	}
@@ -506,6 +507,15 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	}
 	if len(warninfo.ShowTimes) == 0 {
 		warninfo.ShowTimes = "900"
+	}
+	if len(warninfo.Title)== 0 {
+		warninfo.Title = "预警"
+	}
+	if len(warninfo.Severity)== 0 {
+		warninfo.Severity = "4" //一般预警
+	}
+	if len(warninfo.Status)== 0 {
+		warninfo.Status = "1"  //打开事件
 	}
 }
 
