@@ -195,7 +195,7 @@ func addCheckFileScheme() {
 	}
 	//定时任务时间，暂定每天7:00--8:00
 	rand.Seed(time.Now().UnixNano())
-	spec := fmt.Sprintf("%d 7 * * *", rand.Intn(59))
+	spec := fmt.Sprintf("%d %d 7 * * *", rand.Intn(59),rand.Intn(59))
 	glog.V(1).Infof("容灾文件变化检查执行时间:%s", spec)
 	var err error
 	err = c.AddFunc(spec, func() {
@@ -205,7 +205,7 @@ func addCheckFileScheme() {
 		glog.V(0).Infof("addfunc err,%v", err)
 		return
 	}
-	spec2 := fmt.Sprintf("%d 6 * * *", rand.Intn(59))
+	spec2 := fmt.Sprintf("%d %d 6 * * *", rand.Intn(59),rand.Intn(59))
 	glog.V(1).Infof("更新配置文件执行时间:%s", spec2)
 	err = c.AddFunc(spec, func() {
 		ss := ps.GetMachineInfo()
