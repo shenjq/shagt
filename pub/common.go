@@ -42,7 +42,7 @@ func ExecOSCmd(cmd string) (string, error) {
 	}
 
 	cd := exec.Command(cmdarray[0], args...)
-	glog.V(0).Infof("%v start", cd.Args)
+	glog.V(2).Infof("ExecOSCmd: %v", cd.Args)
 	var o, e bytes.Buffer
 	cd.Stdout = &o
 	cd.Stderr = &e
@@ -56,10 +56,10 @@ func ExecOSCmd(cmd string) (string, error) {
 		glog.V(0).Infof("exec.Command err, %v", err)
 		return "", err
 	}
-	glog.V(0).Infof("out:%v", o)
-	glog.V(0).Infof("err:%v", e)
+	glog.V(4).Infof("out:%v", o)
+	glog.V(4).Infof("err:%v", e)
 
-	glog.V(0).Infof("%v ....done", cd.Args)
+	glog.V(2).Infof("%v ....done", cd.Args)
 	return o.String(), nil
 }
 
