@@ -137,13 +137,16 @@ func (le *CliLogEntry) watchlog() {
 
 func handleLog(flag int8, logconf *CliLogConf, text string) {
 	type warninfo struct {
-		Id_original string `json:"id_original"`
-		Source      string `json:"source"`
-		Ip          string `json:"ip"`
-		Severity    string `json:"severity"`
-		Title       string `json:"title"`
-		Summary     string `json:"summary"`
-		Status      string `json:"status"`
+		Id_original  string `json:"id_original"`
+		Source       string `json:"source"`
+		Ip           string `json:"ip"`
+		Severity     string `json:"severity"`
+		Title        string `json:"title"`
+		Summary      string `json:"summary"`
+		Status       string `json:"status"`
+		ShowTimes    string `json:"showtimes"`
+		NoticeEmpNo1 string `json:"noticeempno1"`
+		NoticeEmpNo2 string `json:"noticeempno2"`
 	}
 	winfo := new(warninfo)
 	if flag == 1 || flag == 3 {

@@ -411,7 +411,7 @@ func WarnToEC(w http.ResponseWriter, r *http.Request) {
 		err = json.Unmarshal(body, &warninfo)
 		if err != nil {
 			result.Code = "401"
-			result.Msg = "参数有误" + err.Error()
+			result.Msg = "参数有误,Unmarshal err," + err.Error()
 			result.Resp(w)
 			return
 		}
@@ -428,7 +428,7 @@ func WarnToEC(w http.ResponseWriter, r *http.Request) {
 		arr_summary, sumok := r.Form["summary"]
 		if !ipok || !sumok {
 			result.Code = "401"
-			result.Msg = "参数有误"
+			result.Msg = "form格式数据获取参数有误"
 			result.Resp(w)
 			return
 		}
