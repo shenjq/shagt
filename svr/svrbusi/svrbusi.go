@@ -524,6 +524,9 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	if len(warninfo.Source) == 0 {
 		warninfo.Status = "RT_agent" //代理渠道
 	}
+	if len(warninfo.NoticeWay) == 0 {
+		warninfo.NoticeWay = "1"
+	}
 }
 
 func doSendtoEC() {
