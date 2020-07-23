@@ -1,6 +1,7 @@
 package ps
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/glog"
@@ -10,7 +11,9 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/shirou/gopsutil/net"
 	"github.com/shirou/gopsutil/process"
+	"io"
 	"io/ioutil"
+	"os"
 	"os/user"
 	"runtime"
 	"shagt/comm"
@@ -210,7 +213,7 @@ func GetMachineInfo() *MonServer {
 			Mac:   v.HardwareAddr,
 		}
 		for _, vv := range v.Addrs {
-			n.Addrs = append(n.Addrs, vv.Addr[:strings.Index(vv.Addr,"/")])  //去掉掩码
+			n.Addrs = append(n.Addrs, vv.Addr[:strings.Index(vv.Addr, "/")]) //去掉掩码
 		}
 		ss.Interface = append(ss.Interface, n)
 	}
@@ -300,11 +303,9 @@ func GetMachineInfo() *MonServer {
 	ss.Soft = *getSoftWareVer(&softAll)
 
 	if runtime.GOOS == "linux" {
-		dns, err := ioutil.ReadFile("/etc/resolv.conf")
+		dns, err := readFileIgnoreComments("/etc/resolv.conf", "#")
 		if err != nil {
 			glog.V(0).Info("读取dns配置文件失败,%v", err)
-		} else {
-			ss.Sys.Dns = strings.ReplaceAll(string(dns), "\n", " ")
 		}
 		ntp, err := pub.ExecOSCmd("ntpstat")
 		if err != nil {
@@ -315,6 +316,31 @@ func GetMachineInfo() *MonServer {
 	}
 
 	return ss
+}
+
+//逐行读取文件内容，忽略备注信息
+func readFileIgnoreComments(fpath, prefix string) (content string, err error) {
+	fi, err := os.Open(fpath)
+	if err != nil {
+		glog.V(0).Info("读取文件失败,%v", err)
+		return
+	}
+	defer fi.Close()
+
+	reader := bufio.NewReader(fi)
+	for {
+		line, _, e := reader.ReadLine()
+		i := strings.Index(string(line), prefix)
+		if i >= 0 {
+			content = content + strings.TrimSpace(string(line)[:i])
+		} else {
+			content = content + strings.TrimSpace(string(line))
+		}
+		if e == io.EOF {
+			break
+		}
+	}
+	return
 }
 
 func getSoftWareVer(softmap_now *map[string]SoftInfo) *[]SoftInfo {
@@ -431,7 +457,7 @@ func CheckCM(ss *MonServer) error {
 	flashCfgManageFile() //更新配置信息文件
 	//提交至svr端，svr端插入通道后即返回，再由svr端单独服务统一发送至cmdb，避免cmdb并发不够
 	upcmUrl := fmt.Sprintf("http://%s:17788/updatecm", comm.G_ReadFromServerConf.ServerAddress)
-	jsonbytes,_ := json.Marshal(d)
+	jsonbytes, _ := json.Marshal(d)
 	glog.V(3).Infof("提交cmdb配置信息:%s", string(jsonbytes))
 	r, err := pub.PostJson(upcmUrl, string(jsonbytes))
 	glog.V(3).Infof("result:%s", r)
