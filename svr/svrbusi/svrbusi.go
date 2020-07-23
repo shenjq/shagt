@@ -505,20 +505,24 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	if len(warninfo.Category) == 0 {
 		warninfo.Category = "web"
 	}
-	if len(warninfo.ShowTimes) == 0 {
-		warninfo.ShowTimes = "900"
-	}
-	if len(warninfo.Title)== 0 {
+	if len(warninfo.Title) == 0 {
 		warninfo.Title = "预警"
 	}
-	if len(warninfo.Severity)== 0 {
+	if len(warninfo.Severity) == 0 {
 		warninfo.Severity = "4" //一般预警
 	}
-	if len(warninfo.Status)== 0 {
-		warninfo.Status = "1"  //打开事件
+	if len(warninfo.ShowTimes) == 0 {
+		if warninfo.Severity == "4" {
+			warninfo.ShowTimes = "900"
+		} else {
+			warninfo.ShowTimes = "1800"
+		}
 	}
-	if len(warninfo.Source)== 0 {
-		warninfo.Status = "RT_agent"  //代理渠道
+	if len(warninfo.Status) == 0 {
+		warninfo.Status = "1" //打开事件
+	}
+	if len(warninfo.Source) == 0 {
+		warninfo.Status = "RT_agent" //代理渠道
 	}
 }
 
