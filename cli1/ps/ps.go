@@ -306,6 +306,8 @@ func GetMachineInfo() *MonServer {
 		dns, err := readFileIgnoreComments("/etc/resolv.conf", "#")
 		if err != nil {
 			glog.V(0).Info("读取dns配置文件失败,%v", err)
+		} else {
+			ss.Sys.Dns = dns
 		}
 		ntp, err := pub.ExecOSCmd("ntpstat")
 		if err != nil {
