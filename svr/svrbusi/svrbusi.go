@@ -10,7 +10,9 @@ import (
 	"shagt/conf"
 	"shagt/etcd"
 	"shagt/pub"
+	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -303,6 +305,7 @@ func FinishHandle() {
 	go httpServerCheck()
 	go do_update_cm()
 	go genOriginalid()
+	go genOriginalid2()
 	go doSendtoEC()
 }
 
@@ -351,6 +354,7 @@ func flashCliRegInfoToFile(reginfo *[]etcd.CliRegInfo) {
 }
 
 type WarnInfo struct {
+	EcType           string `json:"ectype"`
 	Id_original      string `json:"id_original"` //如为空则生成一个序号,类似：yyyymmddhhmmss001
 	Ip               string `json:"ip"`
 	Hostname         string `json:"hostname"`
@@ -461,6 +465,7 @@ func WarnToEC(w http.ResponseWriter, r *http.Request) {
 }
 
 //根据请求生成original_id
+//未指定事件类型，无需保留状态的id
 func genOriginalid() {
 	var lasttm, now, id string
 	var num int8
@@ -485,8 +490,73 @@ func genOriginalid() {
 	}
 }
 
-func prepareWarninfo(warninfo *WarnInfo) {
-	if len(warninfo.Id_original) == 0 {
+const NUM = 10
+var mutex sync.Mutex
+var syncNum int8
+type originalidreq struct {
+	key  string
+	chno int8
+}
+var gCH_ecidreq = make(chan originalidreq, 16) //请求队列
+var arr_ecid_resp [NUM](chan string) //数组中存放请求返回队列，从该队列获取id
+var arr_req []byte
+
+func genOriginalid2() {
+	syncNum = NUM
+	for i := 0; i < NUM; i++ {
+		arr_req = append(arr_req, '0')
+	}
+
+	//etcd 连接，设置，监听key变化读取客户端注册清单
+	etcdcli, err := etcd.NewEtcdClient([]string{conf.GetSerConf().EtcdAddress})
+	if err != nil {
+		glog.V(0).Infof("etcd.NewEtcdClient err,%v", err)
+		return
+	}
+
+	for {
+		//从通道处读取数据
+		v, ok := <-gCH_ecidreq
+		if !ok {
+			glog.V(1).Infof("数据读取完毕.")
+			break
+		}
+		glog.V(3).Infof("------请求生成originalid,%v\n", v)
+		k:=fmt.Sprintf("/svr/ectype/%s",v.key)
+		kv, err := etcdcli.GetKey(k)
+		if err != nil {
+
+		}
+		var id string
+		var num int
+		if len(*(kv)) == 0 {
+			num = 1
+		} else if len(*(kv)) == 1 {
+			n,err:=strconv.Atoi((*kv)[k])
+			if err!=nil {
+				num = 1
+			} else {
+				num = n
+			}
+		} else if len(*(kv)) >1 {
+			glog.V(0).Infof("------上送的ectype非法,%v\n", v)
+		}
+		if num >= 0 {
+			id = fmt.Sprintf("%s-%d",v.key,num)
+			num ++
+			etcdcli.PutKey(k,fmt.Sprintf("%d",num))
+		} else {
+			id = fmt.Sprintf("%s-%s",v.key,pub.GetTimeStr6)
+		}
+
+		arr_ecid_resp[v.chno] <- id
+		glog.V(3).Infof("-----生成------>id:%s", id)
+	}
+}
+
+
+func getOriginalid(warninfo *WarnInfo) {
+	if len(warninfo.EcType) == 0 {
 		gCH_OriginalId_notify <- struct{}{}
 		select {
 		case id := <-gCH_OriginalId:
@@ -495,6 +565,48 @@ func prepareWarninfo(warninfo *WarnInfo) {
 			warninfo.Id_original = fmt.Sprintf("%s001", pub.GetTimeStr6())
 			glog.V(1).Infof("获取新的事件id失败,timeout.")
 		}
+		return
+	}
+	var chNo = -1
+	mutex.Lock()
+	if syncNum > 0 {
+		for i := 0; i < NUM; i++ {
+			if arr_req[i] == '0' {
+				arr_req[i] = '1'
+				chNo = i
+				syncNum--
+				break
+			}
+		}
+	}
+	mutex.Unlock()
+
+	if chNo < 0 {
+		glog.V(1).Infof("获取队列编号失败.")
+		return
+	}
+
+	reqdata := originalidreq{
+		key:  warninfo.EcType,
+		chno: int8(chNo),
+	}
+	gCH_ecidreq <- reqdata
+	select {
+	case id := <-arr_ecid_resp[chNo]:
+		warninfo.Id_original = id
+		mutex.Lock()
+		arr_req[chNo] = '0'
+		syncNum++
+		mutex.Unlock()
+	case <-time.After(2 * time.Second):
+		glog.V(1).Infof("获取新的事件id失败,timeout.")
+	}
+	mutex.Unlock()
+}
+
+func prepareWarninfo(warninfo *WarnInfo) {
+	if len(warninfo.Id_original) == 0 {
+		getOriginalid(warninfo)
 		glog.V(0).Infof("新的事件id:%s", warninfo.Id_original)
 	}
 
