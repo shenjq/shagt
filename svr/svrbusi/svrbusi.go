@@ -491,14 +491,18 @@ func genOriginalid() {
 }
 
 const NUM = 10
+
 var mutex sync.Mutex
 var syncNum int8
+
 type originalidreq struct {
-	key  string
-	chno int8
+	key    string
+	status string
+	chno   int8
 }
+
 var gCH_ecidreq = make(chan originalidreq, 16) //请求队列
-var arr_ecid_resp [NUM](chan string) //数组中存放请求返回队列，从该队列获取id
+var arr_ecid_resp [NUM](chan string)           //数组中存放请求返回队列，从该队列获取id
 var arr_req []byte
 
 func genOriginalid2() {
@@ -522,38 +526,42 @@ func genOriginalid2() {
 			break
 		}
 		glog.V(3).Infof("------请求生成originalid,%v\n", v)
-		k:=fmt.Sprintf("/svr/ectype/%s",v.key)
+		strings.TrimSpace(v.key)
+		k := fmt.Sprintf("/svr/ectype/%s", v.key)
 		kv, err := etcdcli.GetKey(k)
 		if err != nil {
-
+			glog.V(0).Infof("etcdcli.GetKey err,%v\n", err)
+			continue
 		}
+
 		var id string
 		var num int
 		if len(*(kv)) == 0 {
 			num = 1
 		} else if len(*(kv)) == 1 {
-			n,err:=strconv.Atoi((*kv)[k])
-			if err!=nil {
+			n, err := strconv.Atoi((*kv)[k])
+			if err != nil {
 				num = 1
 			} else {
 				num = n
 			}
-		} else if len(*(kv)) >1 {
+		} else if len(*(kv)) > 1 {
 			glog.V(0).Infof("------上送的ectype非法,%v\n", v)
 		}
 		if num >= 0 {
-			id = fmt.Sprintf("%s-%d",v.key,num)
-			num ++
-			etcdcli.PutKey(k,fmt.Sprintf("%d",num))
+			id = fmt.Sprintf("%s-%d", v.key, num)
+			if strings.Compare(v.status, "2") != 0 {
+				num++
+				etcdcli.PutKey(k, fmt.Sprintf("%d", num))
+			}
 		} else {
-			id = fmt.Sprintf("%s-%s",v.key,pub.GetTimeStr6)
+			id = fmt.Sprintf("%s-%s", v.key, pub.GetTimeStr6)
 		}
 
 		arr_ecid_resp[v.chno] <- id
 		glog.V(3).Infof("-----生成------>id:%s", id)
 	}
 }
-
 
 func getOriginalid(warninfo *WarnInfo) {
 	if len(warninfo.EcType) == 0 {
@@ -587,8 +595,9 @@ func getOriginalid(warninfo *WarnInfo) {
 	}
 
 	reqdata := originalidreq{
-		key:  warninfo.EcType,
-		chno: int8(chNo),
+		key:    warninfo.EcType,
+		status: warninfo.Status,
+		chno:   int8(chNo),
 	}
 	gCH_ecidreq <- reqdata
 	select {
