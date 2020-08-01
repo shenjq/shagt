@@ -494,8 +494,8 @@ func genOriginalid() {
 	}
 }
 
-const NUM = 10
-var mutex,mutex2 sync.Mutex
+const NUM = 10 //获取事件id，设置10个并发队列
+var mutex, mutex2 sync.Mutex
 var syncNum int8
 
 type originalidreq struct {
@@ -506,14 +506,15 @@ type originalidreq struct {
 
 var gCH_ecidreq = make(chan originalidreq, 16) //请求队列
 var arr_ecid_resp [NUM](chan string)           //数组中存放请求返回队列，从该队列获取id
-var arr_req []byte
+var arr_req []byte                             //队列位图,开始000000000
 
+//根据请求队列，串行处理
 func genOriginalid2() {
 	syncNum = NUM
 	for i := 0; i < NUM; i++ {
 		arr_req = append(arr_req, '0')
 		arr_ecid_resp[i] = make(chan string, 1)
-		glog.V(1).Infof("%2d--------------->%p",i,arr_ecid_resp[i])
+		glog.V(1).Infof("%2d--------------->%p", i, arr_ecid_resp[i])
 	}
 	//glog.V(1).Infof("%s", string(arr_req))
 
@@ -532,7 +533,7 @@ func genOriginalid2() {
 			break
 		}
 		glog.V(3).Infof("------请求根据ectype生成originalid,%v\n", v)
-		glog.V(6).Infof("--------------->%p",arr_ecid_resp[v.chno])
+		glog.V(6).Infof("--------------->%p", arr_ecid_resp[v.chno])
 		strings.TrimSpace(v.key)
 		k := fmt.Sprintf("/svr/ectype/%s", v.key)
 		kv, err := etcdcli.GetKey(k)
@@ -571,6 +572,7 @@ func genOriginalid2() {
 }
 
 func getOriginalid(warninfo *WarnInfo) {
+	//未设置ectype，通知类
 	if len(warninfo.EcType) == 0 {
 		gCH_OriginalId_notify <- struct{}{}
 		select {
@@ -582,7 +584,11 @@ func getOriginalid(warninfo *WarnInfo) {
 		}
 		return
 	}
+
+	//根据ectype从etcd获取事件id
 	var chNo = -1
+	var retry = 2 //首次失败后重试3次
+loop:
 	mutex.Lock()
 	if syncNum > 0 {
 		for i := 0; i < NUM; i++ {
@@ -598,6 +604,11 @@ func getOriginalid(warninfo *WarnInfo) {
 
 	glog.V(3).Infof("chNo=%d", chNo)
 	if chNo < 0 {
+		if retry > 0 {
+			retry--
+			time.Sleep(time.Millisecond * 100)
+			goto loop
+		}
 		glog.V(1).Infof("获取队列编号失败.")
 		return
 	}
@@ -607,7 +618,7 @@ func getOriginalid(warninfo *WarnInfo) {
 		status: warninfo.Status,
 		chno:   int8(chNo),
 	}
-	glog.V(6).Infof("--------------->%p",arr_ecid_resp[chNo])
+	glog.V(6).Infof("--------------->%p", arr_ecid_resp[chNo])
 	gCH_ecidreq <- reqdata
 	select {
 	case id := <-arr_ecid_resp[chNo]:
