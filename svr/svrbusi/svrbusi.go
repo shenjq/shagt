@@ -442,6 +442,7 @@ func WarnToEC(w http.ResponseWriter, r *http.Request) {
 		arr_id, idok := r.Form["id_original"]
 		arr_severity, secok := r.Form["severity"]
 		arr_status, statok := r.Form["status"]
+		arr_ectype, ectypeok := r.Form["ectype"]
 		if idok {
 			warninfo.Id_original = arr_id[0]
 		}
@@ -450,6 +451,9 @@ func WarnToEC(w http.ResponseWriter, r *http.Request) {
 		}
 		if statok {
 			warninfo.Status = arr_status[0]
+		}
+		if ectypeok {
+			warninfo.Status = arr_ectype[0]
 		}
 	}
 
@@ -491,8 +495,7 @@ func genOriginalid() {
 }
 
 const NUM = 10
-
-var mutex sync.Mutex
+var mutex,mutex2 sync.Mutex
 var syncNum int8
 
 type originalidreq struct {
@@ -509,7 +512,10 @@ func genOriginalid2() {
 	syncNum = NUM
 	for i := 0; i < NUM; i++ {
 		arr_req = append(arr_req, '0')
+		arr_ecid_resp[i] = make(chan string, 1)
+		glog.V(1).Infof("%2d--------------->%p",i,arr_ecid_resp[i])
 	}
+	//glog.V(1).Infof("%s", string(arr_req))
 
 	//etcd 连接，设置，监听key变化读取客户端注册清单
 	etcdcli, err := etcd.NewEtcdClient([]string{conf.GetSerConf().EtcdAddress})
@@ -525,7 +531,8 @@ func genOriginalid2() {
 			glog.V(1).Infof("数据读取完毕.")
 			break
 		}
-		glog.V(3).Infof("------请求生成originalid,%v\n", v)
+		glog.V(3).Infof("------请求根据ectype生成originalid,%v\n", v)
+		glog.V(6).Infof("--------------->%p",arr_ecid_resp[v.chno])
 		strings.TrimSpace(v.key)
 		k := fmt.Sprintf("/svr/ectype/%s", v.key)
 		kv, err := etcdcli.GetKey(k)
@@ -550,7 +557,7 @@ func genOriginalid2() {
 		}
 		if num >= 0 {
 			id = fmt.Sprintf("%s-%d", v.key, num)
-			if strings.Compare(v.status, "2") != 0 {
+			if strings.Compare(v.status, "2") == 0 {
 				num++
 				etcdcli.PutKey(k, fmt.Sprintf("%d", num))
 			}
@@ -589,6 +596,7 @@ func getOriginalid(warninfo *WarnInfo) {
 	}
 	mutex.Unlock()
 
+	glog.V(3).Infof("chNo=%d", chNo)
 	if chNo < 0 {
 		glog.V(1).Infof("获取队列编号失败.")
 		return
@@ -599,21 +607,25 @@ func getOriginalid(warninfo *WarnInfo) {
 		status: warninfo.Status,
 		chno:   int8(chNo),
 	}
+	glog.V(6).Infof("--------------->%p",arr_ecid_resp[chNo])
 	gCH_ecidreq <- reqdata
 	select {
 	case id := <-arr_ecid_resp[chNo]:
 		warninfo.Id_original = id
-		mutex.Lock()
+		mutex2.Lock()
 		arr_req[chNo] = '0'
 		syncNum++
-		mutex.Unlock()
+		mutex2.Unlock()
 	case <-time.After(2 * time.Second):
 		glog.V(1).Infof("获取新的事件id失败,timeout.")
 	}
-	mutex.Unlock()
 }
 
 func prepareWarninfo(warninfo *WarnInfo) {
+	if len(warninfo.Status) == 0 {
+		warninfo.Status = "1" //打开事件,根据ectype获取id需要status，故现行检查
+	}
+
 	if len(warninfo.Id_original) == 0 {
 		getOriginalid(warninfo)
 		glog.V(0).Infof("新的事件id:%s", warninfo.Id_original)
@@ -639,9 +651,7 @@ func prepareWarninfo(warninfo *WarnInfo) {
 			warninfo.ShowTimes = "1800"
 		}
 	}
-	if len(warninfo.Status) == 0 {
-		warninfo.Status = "1" //打开事件
-	}
+
 	if len(warninfo.Source) == 0 {
 		warninfo.Status = "RT_agent" //代理渠道
 	}

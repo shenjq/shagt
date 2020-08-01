@@ -137,6 +137,7 @@ func (le *CliLogEntry) watchlog() {
 
 func handleLog(flag int8, logconf *CliLogConf, text string) {
 	type warninfo struct {
+		EcType       string `json:"ectype"`
 		Id_original  string `json:"id_original"`
 		Source       string `json:"source"`
 		Ip           string `json:"ip"`
