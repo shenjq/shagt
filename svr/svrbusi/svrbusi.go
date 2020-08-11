@@ -554,6 +554,7 @@ func genOriginalid2() {
 				num = n
 			}
 		} else if len(*(kv)) > 1 {
+			num = -1
 			glog.V(0).Infof("------上送的ectype非法,%v\n", v)
 		}
 		if num >= 0 {
