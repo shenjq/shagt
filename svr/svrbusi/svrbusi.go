@@ -683,6 +683,9 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	empinfo2 := ""
 	emp_arr := strings.Split(empinfo1, "|")
 	for _, v := range emp_arr {
+		if len(strings.TrimSpace(v))==0 {
+			continue
+		}
 		if []byte(v)[0] >= '0' && []byte(v)[0] <= '9' {
 			name, ok := gEmpInfo[v]
 			if !ok {
