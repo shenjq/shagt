@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"shagt/conf"
 	"shagt/etcd"
 	"shagt/pub"
@@ -301,12 +302,17 @@ func dispSer() {
 }
 
 func FinishHandle() {
+	go loadEmpFile()
 	go SaveCliRegInfo()
 	go httpServerCheck()
 	go do_update_cm()
 	go genOriginalid()
 	go genOriginalid2()
 	go doSendtoEC()
+	go signalHander()
+
+	time.Sleep(time.Second)
+	glog.Flush()
 }
 
 //检查服务是否启动完成
@@ -670,6 +676,24 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	if len(warninfo.NoticeWay) == 0 {
 		warninfo.NoticeWay = "1"
 	}
+
+	//如果送的是员工号，转换成姓名
+	empinfo1 := warninfo.NoticeEmpNo1
+	empinfo2 := ""
+	emp_arr := strings.Split(empinfo1, "|")
+	for _, v := range emp_arr {
+		if []byte(v)[0] >= '0' && []byte(v)[0] <= '9' {
+			name, ok := gEmpInfo[v]
+			if !ok {
+				glog.V(0).Infof("未设置员工信息,%s", v)
+				continue
+			}
+			empinfo2 = empinfo2 + name + "|"
+		} else {
+			empinfo2 = empinfo2 + v + "|"
+		}
+	}
+	warninfo.NoticeEmpNo1 = empinfo2
 }
 
 func doSendtoEC() {
@@ -705,6 +729,56 @@ func doSendtoEC() {
 		glog.V(3).Infof("事件处理结果%s\n", r)
 		if err != nil {
 			glog.V(0).Infof("向事件中心发送事件,err:%v\n", err)
+		}
+	}
+}
+
+var gCH_loadEmpFile = make(chan struct{}, 1)
+var gEmpInfo = make(map[string]string) //收到预警信息后根据员工后获取姓名
+
+func loadEmpFile() {
+	var flag int8
+	empfile := conf.GetSerConf().EmpFile
+	glog.V(4).Infof("员工信息文件EmpFile:%s", empfile)
+	if len(strings.TrimSpace(empfile)) == 0 {
+		glog.V(0).Infof("未设置EmpFile\n")
+		flag = 1
+	}
+	gCH_loadEmpFile <- struct{}{}
+
+	for {
+		//从通道处读取数据
+		_, ok := <-gCH_loadEmpFile
+		if !ok {
+			glog.V(1).Infof("数据读取完毕.")
+			break
+		}
+		if flag == 1 {
+			glog.V(0).Infof("未设置EmpFile\n")
+			continue
+		}
+
+		glog.V(3).Infof("开始加载员工信息文件:[%s]\n", empfile)
+		empData, err := ioutil.ReadFile(empfile)
+		if err != nil {
+			glog.V(0).Infof("ioutil.ReadFile err,%v", err)
+			continue
+		}
+		if err = json.Unmarshal(empData, &gEmpInfo); err != nil {
+			glog.V(0).Infof("json.Unmarshal err,%v", err)
+			continue
+		}
+	}
+}
+
+func signalHander() {
+	ch_sig := make(chan os.Signal)
+	signal.Notify(ch_sig, syscall.SIGUSR1)
+	for {
+		v := <-ch_sig
+		if v == syscall.SIGUSR1 {
+			glog.V(0).Info("收到自定义中断信号SIGUSR1，执行开始加载员工信息文件操作。")
+			gCH_loadEmpFile <- struct{}{}
 		}
 	}
 }

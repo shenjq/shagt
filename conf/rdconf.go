@@ -17,6 +17,7 @@ type SerConf struct {
 	CmdbAddress_value   string
 	ECAddress_key       string
 	ECAddress_value     string
+	EmpFile             string
 	CliTtl_key          string
 	CliTtl_value        string
 	SoftCheck_key       string
