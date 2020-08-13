@@ -378,6 +378,7 @@ type WarnInfo struct {
 	Status           string `json:"status"` //1打开,2自动关闭，告警解除后请求端传入；3运维人员手工关闭；4第三方关闭；
 	ShowTimes        string `json:"showtimes"`
 	NoticeWay        string `json:"noticeway"`
+	NoticeEmpNo      string `json:"noticeempno"`
 	NoticeEmpNo1     string `json:"noticeempno1"`
 	NoticeEmpNo2     string `json:"noticeempno2"`
 	NoticeEmpNo3     string `json:"noticeempno3"`
@@ -693,7 +694,7 @@ func prepareWarninfo(warninfo *WarnInfo) {
 			empinfo2 = empinfo2 + v + "|"
 		}
 	}
-	warninfo.NoticeEmpNo1 = empinfo2
+	warninfo.NoticeEmpNo = empinfo2
 }
 
 func doSendtoEC() {
