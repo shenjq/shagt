@@ -379,10 +379,10 @@ type WarnInfo struct {
 	ShowTimes        string `json:"showtimes"`
 	NoticeWay        string `json:"noticeway"`
 	NoticeEmpNo      string `json:"noticeempno"`
-	NoticeEmpNo1     string `json:"noticeempno1"`
-	NoticeEmpNo2     string `json:"noticeempno2"`
-	NoticeEmpNo3     string `json:"noticeempno3"`
-	NoticeEmpNo4     string `json:"noticeempno4"`
+	//NoticeEmpNo1     string `json:"noticeempno1"`
+	//NoticeEmpNo2     string `json:"noticeempno2"`
+	//NoticeEmpNo3     string `json:"noticeempno3"`
+	//NoticeEmpNo4     string `json:"noticeempno4"`
 	Filed1           string `json:"filed1"`
 	Filed2           string `json:"filed2"`
 	Filed3           string `json:"filed3"`
@@ -679,7 +679,7 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	}
 
 	//如果送的是员工号，转换成姓名
-	empinfo1 := warninfo.NoticeEmpNo1
+	empinfo1 := warninfo.NoticeEmpNo
 	empinfo2 := ""
 	emp_arr := strings.Split(empinfo1, "|")
 	for _, v := range emp_arr {
