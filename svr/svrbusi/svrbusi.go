@@ -303,6 +303,7 @@ func dispSer() {
 
 func FinishHandle() {
 	go loadEmpFile()
+	go loadBlackFile()
 	go SaveCliRegInfo()
 	go httpServerCheck()
 	go do_update_cm()
@@ -383,9 +384,9 @@ type WarnInfo struct {
 	//NoticeEmpNo2     string `json:"noticeempno2"`
 	//NoticeEmpNo3     string `json:"noticeempno3"`
 	//NoticeEmpNo4     string `json:"noticeempno4"`
-	Filed1           string `json:"filed1"`
-	Filed2           string `json:"filed2"`
-	Filed3           string `json:"filed3"`
+	Filed1 string `json:"filed1"`
+	Filed2 string `json:"filed2"`
+	Filed3 string `json:"filed3"`
 }
 
 //1、解析接收到的报文，给结构体赋值
@@ -683,7 +684,7 @@ func prepareWarninfo(warninfo *WarnInfo) {
 	empinfo2 := ""
 	emp_arr := strings.Split(empinfo1, "|")
 	for _, v := range emp_arr {
-		if len(strings.TrimSpace(v))==0 {
+		if len(strings.TrimSpace(v)) == 0 {
 			continue
 		}
 		if []byte(v)[0] >= '0' && []byte(v)[0] <= '9' {
@@ -707,10 +708,12 @@ func doSendtoEC() {
 		glog.V(0).Infof("未设置事件中心地址\n")
 		flag = 1
 	}
+	var hitblack bool
 
 	for {
 		//测试ec接口是否可达
 
+		hitblack = false
 		//从通道处读取数据
 		v, ok := <-gCH_wantoec
 		if !ok {
@@ -719,6 +722,18 @@ func doSendtoEC() {
 		}
 		glog.V(3).Infof("处理服务从通道获取数据:[%v]\n", v)
 
+		{
+			for _, ip := range gBlackIpInfo {
+				if strings.Contains(v.Summary, ip) {
+					glog.V(0).Infof("不发送事件平台,命中过滤信息:[%s]\n", ip)
+					hitblack = true
+					break
+				}
+			}
+			if hitblack {
+				continue
+			}
+		}
 		byteWarninfo, err := json.Marshal(v)
 		if err != nil {
 			glog.V(0).Infof("json.Marshal err:%v\n", err)
@@ -775,14 +790,50 @@ func loadEmpFile() {
 	}
 }
 
+var gBlackIpInfo []string
+
 func signalHander() {
 	ch_sig := make(chan os.Signal)
-	signal.Notify(ch_sig, syscall.SIGUSR1)
+	signal.Notify(ch_sig, syscall.SIGUSR1, syscall.SIGUSR2)
 	for {
 		v := <-ch_sig
 		if v == syscall.SIGUSR1 {
 			glog.V(0).Info("收到自定义中断信号SIGUSR1，执行开始加载员工信息文件操作。")
 			gCH_loadEmpFile <- struct{}{}
 		}
+		if v == syscall.SIGUSR2 {
+			glog.V(0).Info("收到自定义中断信号SIGUSR2，执行开始加载黑ip列表信息。")
+			gCH_loadBlackFile <- struct{}{}
+		}
+	}
+}
+
+var gCH_loadBlackFile = make(chan struct{}, 1)
+
+func loadBlackFile() {
+
+	gCH_loadBlackFile <- struct{}{}
+
+	for {
+		//从通道处读取数据
+		<-gCH_loadBlackFile
+
+		workpath, err := pub.GetWorkPath()
+		if err != nil {
+			glog.V(0).Infof("GetCurrentPath err,%v", err)
+			continue
+		}
+		blacklistfile := workpath + "conf/blacklist.json"
+		glog.V(4).Infof("blacklistfile:%s", blacklistfile)
+		Data, err := ioutil.ReadFile(blacklistfile)
+		if err != nil {
+			glog.V(0).Infof("ioutil.ReadFile err,%v", err)
+			continue
+		}
+		if err = json.Unmarshal(Data, &gBlackIpInfo); err != nil {
+			glog.V(0).Infof("json.Unmarshal err,%v", err)
+			continue
+		}
+		glog.V(0).Infof("json.Unmarshal success :%v", gBlackIpInfo)
 	}
 }
